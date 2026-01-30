@@ -20,6 +20,34 @@ from typing import Any, Self, TypeVar
 T = TypeVar("T")
 
 
+def from_torus(cls: type[T], dikt: dict[str, Any]) -> T:
+    """Restore dataclass from a OmegaConf dictionary.
+
+    Args:
+        cls: The class of the dataclass
+        dikt: The dictionary containing the properties of the dataclass
+
+    Raises:
+        ValueError: the dictionary and the dataclass is not compatible
+
+    Returns:
+        The dataclass instance.
+    """
+    try:
+        fieldtypes = {f.name: f.type for f in fields(cls)}  # type: ignore
+        return cls(
+            **{
+                f: from_dict(fieldtypes[f], dikt[f])  # type: ignore
+                if is_dataclass(fieldtypes[f])
+                else dikt[f]
+                for f in dikt
+                if f in fieldtypes  # allow extra keys
+            }
+        )
+    except Exception as e:
+        raise ValueError(f"Error converting dictionary to {cls.__name__}: {e}")
+
+
 def from_dict(cls: type[T], dikt: dict[str, Any]) -> T:
     """Restore dataclass from a OmegaConf dictionary.
 
@@ -60,6 +88,33 @@ class System:
 
     radius: float | None = None
     r"By default, the radius of the sphere is fixed at $\sqrt{Q}$."
+
+    nspins: tuple[int, int] = (3, 0)
+    "Number of spin-up and spin-down electrons."
+
+    interaction_strength: float = 1.0
+    "The factor for the potential energy."
+
+    lz_center: float = 0.0
+    "Lz to pick using penalty method."
+
+    lz_penalty: float = 0.0
+    "The strength of the penalty for (Lz - lz_center)^2."
+
+    l2_penalty: float = 0.0
+    "The strength of the penalty for L^2."
+
+    interaction_type: InteractionType = InteractionType.coulomb
+
+
+class TorusSystem:
+    flux: int = 2
+    "Positive or negative integer $2Q$."
+
+    L_x: float = 1
+    "Length in the xi(x) direction"
+    L_y: float = 1
+    "Length in the eta(y) direction"
 
     nspins: tuple[int, int] = (3, 0)
     "Number of spin-up and spin-down electrons."
