@@ -36,8 +36,8 @@ class PsiformerLayers(nn.Module):
 
     @nn.compact
     def __call__(self, electrons: jnp.ndarray, spins: jnp.ndarray):
-        theta, phi = electrons[..., 0], electrons[..., 1]
-        h_one = self.input_feature(theta, phi, spins)
+        r, theta = electrons[..., 0], electrons[..., 1]
+        h_one = self.input_feature(r, theta, spins)
         attention_dim = self.num_heads * self.heads_dim
         h_one = nn.Dense(attention_dim, use_bias=False)(h_one)
         for _ in range(self.num_layers):
@@ -48,12 +48,13 @@ class PsiformerLayers(nn.Module):
             h_one = nn.LayerNorm(epsilon=1e-5)(h_one)
         return h_one
 
-    def input_feature(self, theta: jnp.ndarray, phi: jnp.ndarray, spins: jnp.ndarray):
+# FIXME
+    def input_feature(self, r: jnp.ndarray, theta: jnp.ndarray, spins: jnp.ndarray):
+        r_normalized = r / jnp.max(r)
         return jnp.stack(
             [
-                jnp.cos(theta),
-                jnp.sin(theta) * jnp.cos(phi),
-                jnp.sin(theta) * jnp.sin(phi),
+                jnp.cos(theta) * r,
+                jnp.sin(theta) * r,
                 spins,
             ],
             axis=-1,
@@ -75,9 +76,10 @@ class Psiformer(nn.Module):
         logmax = jnp.max(logdets)  # logsumexp trick
         return jnp.log(jnp.sum(signs * jnp.exp(logdets - logmax))) + logmax
 
+    # FIXME
     @nn.compact
     def orbitals(self, electrons):
-        theta, phi = electrons[..., 0], electrons[..., 1]
+        r, theta = electrons[..., 0], electrons[..., 1]
         spins = jnp.array([1] * self.nspins[0] + [-1] * self.nspins[1])
         h_one = PsiformerLayers(
             num_heads=self.num_heads,
@@ -86,6 +88,6 @@ class Psiformer(nn.Module):
         )(electrons, spins)
         orbitals = Orbitals(
             type=self.orbital_type, Q=self.Q, nspins=self.nspins, ndets=self.ndets
-        )(h_one, theta, phi)
+        )(h_one, r, theta)
         jastrow = Jastrow(self.nspins)(electrons)
         return jnp.exp(jastrow / sum(self.nspins)) * orbitals

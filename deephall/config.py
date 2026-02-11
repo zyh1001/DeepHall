@@ -89,32 +89,7 @@ class System:
     radius: float | None = None
     r"By default, the radius of the sphere is fixed at $\sqrt{Q}$."
 
-    nspins: tuple[int, int] = (3, 0)
-    "Number of spin-up and spin-down electrons."
-
-    interaction_strength: float = 1.0
-    "The factor for the potential energy."
-
-    lz_center: float = 0.0
-    "Lz to pick using penalty method."
-
-    lz_penalty: float = 0.0
-    "The strength of the penalty for (Lz - lz_center)^2."
-
-    l2_penalty: float = 0.0
-    "The strength of the penalty for L^2."
-
-    interaction_type: InteractionType = InteractionType.coulomb
-
-
-class TorusSystem:
-    flux: int = 2
-    "Positive or negative integer $2Q$."
-
-    L_x: float = 1
-    "Length in the xi(x) direction"
-    L_y: float = 1
-    "Length in the eta(y) direction"
+    d: float=0.1
 
     nspins: tuple[int, int] = (3, 0)
     "Number of spin-up and spin-down electrons."

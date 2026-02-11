@@ -19,7 +19,7 @@ from scipy import special as ss
 
 from deephall.config import OrbitalType
 
-
+# NO CHANGE
 class FeaturedOrbitals(nn.Module):
     nspins: tuple[int, int]
     features: list[int]
@@ -42,29 +42,28 @@ class Orbitals(nn.Module):
     ndets: int
 
     def setup(self):
-        m = np.arange(-self.Q, self.Q + 1)
-        self.norm_factor = jnp.array(np.sqrt(ss.comb(2 * self.Q, self.Q - m)))
+        m = np.arange(0, int(self.Q + 1))
+        self.norm_factor = jnp.array(1.0 / np.sqrt(ss.factorial(m)))
         if self.type == OrbitalType.full:
             self.featured_orbitals = FeaturedOrbitals(
                 nspins=self.nspins,
-                features=(int(self.Q * 2) + 1, sum(self.nspins), self.ndets),
+                features=(int(self.Q + 1), sum(self.nspins), self.ndets),
             )
         elif self.type == OrbitalType.sparse:
             self.featured_orbitals = FeaturedOrbitals(
                 nspins=self.nspins,
                 features=(8, sum(self.nspins), self.ndets),
             )
-            self.lll_weight = nn.DenseGeneral(int(2 * self.Q + 1), axis=1)
+            self.lll_weight = nn.DenseGeneral(int(self.Q + 1), axis=1)
 
-    def __call__(self, h_one, theta, phi):
+    def __call__(self, h_one, r, theta):
         orbitals = self.featured_orbitals(h_one)
         if self.type == OrbitalType.sparse:
             orbitals = self.lll_weight(orbitals).transpose((0, 3, 1, 2))
 
-        m = jnp.arange(-self.Q, self.Q + 1)
-        u = (jnp.cos(theta / 2) * jnp.exp(0.5j * phi))[..., None]
-        v = (jnp.sin(theta / 2) * jnp.exp(-0.5j * phi))[..., None]
-        envelope = self.norm_factor * u ** (self.Q + m) * v ** (self.Q - m)
+        m = jnp.arange(0, int(self.Q + 1))
+        z = r * jnp.exp(1j  * theta)[..., None]
+        envelope = self.norm_factor * z ** m
         orbitals = jnp.sum(orbitals * envelope[..., None, None], axis=1)
 
         return jnp.moveaxis(orbitals, -1, 0)  # Move ndets dim to the front
@@ -106,16 +105,17 @@ class Jastrow(nn.Module):
 
         return jastrow_ee_anti + jastrow_ee_par
 
-    def calculated_r_ee(self, electrons: jnp.ndarray) -> jnp.ndarray:
-        theta, phi = electrons[..., 0], electrons[..., 1]
-        cart_e = jnp.stack(
-            [
-                jnp.cos(theta),
-                jnp.sin(theta) * jnp.cos(phi),
-                jnp.sin(theta) * jnp.sin(phi),
-            ],
-            axis=-1,
-        )
-        cart_ee = cart_e[None] - cart_e[:, None]
-        eye = jnp.eye(cart_ee.shape[0])
-        return jnp.linalg.norm(cart_ee + eye[..., None], axis=-1) * (1.0 - eye)
+    def calculated_r_ee(electrons: jnp.ndarray):
+
+        r = electrons[..., 0]
+        theta = electrons[..., 1]
+
+        # polar -> cartesian
+        x = r * jnp.cos(theta)
+        y = r * jnp.sin(theta)
+
+        cart_e = jnp.stack([x, y], axis=-1)
+
+        cart_ee = cart_e[:, None] - cart_e[None, :]
+        
+        return jnp.linalg.norm(cart_ee, axis=-1)

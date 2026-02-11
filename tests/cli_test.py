@@ -27,6 +27,7 @@ def dotlist(tmp_path: Path):
         "seed=42",
         "system.nspins=[3, 0]",
         "system.flux=6",
+        "system.d=0.1"
         "network.type=laughlin",
         "optim.iterations=100",
         "optim.optimizer=none",

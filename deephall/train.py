@@ -38,7 +38,7 @@ from deephall.types import LogPsiNetwork
 logger = logging.getLogger("deephall")
 
 
-def init_guess(key: PRNGKey, batch: int, nelec: int):
+def init_guess(key: PRNGKey, batch: int, nelec: int, Q: int):
     """Create uniform samples on the sphere.
 
     Args:
@@ -49,15 +49,19 @@ def init_guess(key: PRNGKey, batch: int, nelec: int):
     Returns:
         Electron coordinates of shape [batch, nelec, 2]
     """
+    a = jnp.sqrt(2*Q)
     key1, key2 = jax.random.split(key)
-    theta = jnp.arccos(jax.random.uniform(key1, (batch, nelec), minval=-1, maxval=1))
-    phi = jax.random.uniform(key2, (batch, nelec), minval=-jnp.pi, maxval=jnp.pi)
-    return jnp.stack([theta, phi], axis=-1)
+    u1 = jax.random.uniform(key1, (batch, nelec), minval=0, maxval=1)
+    u2 = jax.random.uniform(key2, (batch, nelec), minval=0, maxval=1)
+    # 生成圆盘上的均匀分布
+    r = jnp.sqrt(u1) * a
+    theta = jnp.sqrt(u2) * 2 * jnp.pi
+    return jnp.stack([r, theta], axis=-1)
 
 
 def initialize_state(cfg: Config, model: nn.Module):
     key_data, key_params = jax.random.split(jax.random.PRNGKey(cfg.seed))
-    data = init_guess(key_data, cfg.batch_size, sum(cfg.system.nspins))
+    data = init_guess(key_data, cfg.batch_size, sum(cfg.system.nspins), cfg.system.flux)
     data = data.reshape((jax.device_count(), -1, *data.shape[-2:]))
     params = kfac_jax.utils.replicate_all_local_devices(
         model.init(key_params, data[0, 0])

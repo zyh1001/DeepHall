@@ -24,22 +24,47 @@ from deephall.config import InteractionType, System
 from deephall.types import AngularMomenta, LocalEnergy, LogPsiNetwork, OtherObservables
 
 
-def coulomb_potential(cos12: jnp.ndarray, Q: float, r: jnp.ndarray) -> jnp.ndarray:
+def coulomb_potential(r_ee: jnp.ndarray, Q: float) -> jnp.ndarray:
     """Returns the electron-electron Coulomb potential.
-
+s
     Args:
-        cos12: The cosine of the angle between two electrons.
+        r_ee: The distance between two electrons.
             Shape (..., nelec, nelec).
         Q: Monopole strength. Unused.
-        r: Sphere radius.
 
     Returns:
         potential energy
     """
-    del Q
-    r_ee = jnp.sqrt(2 - 2 * cos12)
-    return jnp.sum(jnp.triu(1 / r_ee, k=1)) / r
+    return jnp.sum(jnp.triu(1 / r_ee, k=1))
 
+
+
+
+def make_conf_potential(Q: float, a: jnp.ndarray, d: jnp.ndarray, r_grid, Vc_table, N_spin):
+    """
+    返回用于计算约束势能的函数。假设data[..., i, :] 存储第i个电子的(r,theta)。
+    输入：
+        Q: 磁单极子强度（可忽略，可留作占位）。
+        a: 圆盘半径。
+        d: 圆盘到电子平面的距离。
+        N: 电子数，用于计算势能强度。
+        r_grid: 一维数组（升序），存储预计算的r值节点。
+        Vc_table: 一维数组，对应节点的V_c(r)值（负值）。
+    返回值：
+        函数 conf(data) -> 形如(...)的势能值。
+    """
+    def conf(data):
+        # 提取径向坐标 r
+        r = data[..., 0]  # 形状 (..., nelec)
+        # 插值计算 r<a*15 区域的势能
+        V_small = jnp.interp(r, r_grid, Vc_table)  
+        # r>=15a 时近似为点电荷势
+        V_large = -N_spin / jnp.sqrt(d**2 + r**2)
+        # 根据条件选择势能
+        V_vals = jnp.where(r < 15*a, V_small, V_large)
+        # 对所有电子求和（axis=-1对最后一个维度求和）
+        return jnp.sum(V_vals, axis=-1)  # 返回总势能
+    return conf
 
 def harmonic_potential(cos12: jnp.ndarray, Q: float) -> jnp.ndarray:
     """Returns the simple harmonic potential.
@@ -60,27 +85,32 @@ def harmonic_potential(cos12: jnp.ndarray, Q: float) -> jnp.ndarray:
     return jnp.sum(jnp.triu(1 + (Q + 1) / Q * cos12, k=1))
 
 
-def make_potential(
-    interaction_type: InteractionType, Q: float, r: jnp.ndarray
+def make_ee_potential(
+    interaction_type: InteractionType, Q: float
 ) -> Callable[[jnp.ndarray], jnp.ndarray]:
     """Create potential energy function with a given type and geometry."""
     if interaction_type == InteractionType.coulomb:
-        potential_function = partial(coulomb_potential, Q=Q, r=r)
+        potential_function = partial(coulomb_potential, Q=Q)
     if interaction_type == InteractionType.harmonic:
         potential_function = partial(harmonic_potential, Q=Q)
 
     def potential(data: jnp.ndarray) -> jnp.ndarray:
-        theta, phi = data[..., 0], data[..., 1]
-        xyz_data = jnp.stack(
-            [sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta)], axis=-1
-        )
-        cos12 = jnp.einsum("ia,ja->ij", xyz_data, xyz_data)
-        return potential_function(cos12)
+        r = data[..., 0]
+        theta = data[..., 1]
+
+        # polar -> cartesian
+        x = r * jnp.cos(theta)
+        y = r * jnp.sin(theta)
+
+        cart_e = jnp.stack([x, y], axis=-1)
+
+        cart_ee = cart_e[:, None] - cart_e[None, :]
+        return potential_function(cart_ee)
 
     return potential
 
 
-def make_local_kinetic_energy(f: LogPsiNetwork, Q: float, r: jnp.ndarray):
+def make_local_kinetic_energy(f: LogPsiNetwork, Q: float, a: jnp.ndarray):
     r"""Creates a function to for the local kinetic energy.
 
     Args:
@@ -100,7 +130,7 @@ def make_local_kinetic_energy(f: LogPsiNetwork, Q: float, r: jnp.ndarray):
     def _lapl_over_f(
         params: ArrayTree, data: jnp.ndarray
     ) -> tuple[jnp.ndarray, AngularMomenta]:
-        theta, phi = data[..., 0], data[..., 1]
+        r, theta = data[..., 0], data[..., 1]
 
         #        +----------------------------------------------------------+
         #        |           Prepare first and second detivatives           |
@@ -108,10 +138,10 @@ def make_local_kinetic_energy(f: LogPsiNetwork, Q: float, r: jnp.ndarray):
 
         grad_real = jax.grad(lambda p, x: f(p, x).real, argnums=1)(params, data)
         grad_imag = jax.grad(lambda p, x: f(p, x).imag, argnums=1)(params, data)
-        grad_theta = grad_real[..., 0] + 1j * grad_imag[..., 0]
-        grad_phi = grad_real[..., 1] + 1j * grad_imag[..., 1]
+        grad_r = grad_real[..., 0] + 1j * grad_imag[..., 0]
+        grad_theta = grad_real[..., 1] + 1j * grad_imag[..., 1]
         # $(\nabla \log \psi) \cdot (\nabla \log \psi)$ on a sphere
-        square_grad_logpsi = jnp.sum(grad_theta**2 + grad_phi**2 / sin(theta) ** 2)
+        square_grad_logpsi = jnp.sum(grad_r**2 + grad_theta**2 / r ** 2)
 
         hess_real = jax.hessian(lambda p, x: f(p, x).real, argnums=1)(params, data)
         hess_imag = jax.hessian(lambda p, x: f(p, x).imag, argnums=1)(params, data)
@@ -121,61 +151,46 @@ def make_local_kinetic_energy(f: LogPsiNetwork, Q: float, r: jnp.ndarray):
         #        |                Calculating kinetic energy                |
         #        +----------------------------------------------------------+
 
-        # $\nabla^2 \log \psi$ on a sphere
+        # $\nabla^2 \log \psi$ on disk
         grad_grad_logpsi = jnp.sum(
-            grad_theta / tan(theta)
-            + jnp.diagonal(hess_logpsi[:, 0, :, 0])
+            jnp.diagonal(hess_logpsi[:, 0, :, 0])
             + jnp.diagonal(hess_logpsi[:, 1, :, 1]) / sin(theta) ** 2
         )
         # See section 3.10.3 of "Composite Fermions"
         magnetic_contribution = jnp.sum(
-            (Q / tan(theta)) ** 2 + 2j * Q * cos(theta) / sin(theta) ** 2 * grad_phi
+            -2j * Q / a**2 * grad_theta + Q**2 * r**2 / a**4
         )
         sum_kinetic_momentum_square = (
             -grad_grad_logpsi - square_grad_logpsi + magnetic_contribution
         )
-        kinetic_energy = sum_kinetic_momentum_square / 2 / r**2
+        kinetic_energy = sum_kinetic_momentum_square / 2
 
         #        +----------------------------------------------------------+
         #        |        Calculating angular momentum square (L^2)         |
         #        +----------------------------------------------------------+
 
-        i = (Ellipsis, slice(None), jnp.newaxis)  # same as [..., :, None]
-        j = (Ellipsis, jnp.newaxis, slice(None))  # same as [..., None, :]
-        r_hat = jnp.stack([sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta)])
-        phi_hat = jnp.stack([-sin(phi), cos(phi), jnp.zeros_like(phi)])
-        theta_hat_prime = jnp.stack(  # Rescaled theta_hat with 1/sin(theta)
-            [cos(phi) / tan(theta), sin(phi) / tan(theta), -jnp.ones_like(theta)]
-        )
-        hess_theta_theta = hess_logpsi[:, 0, :, 0] + grad_theta[*i] * grad_theta[*j]
-        hess_theta_phi = hess_logpsi[:, 0, :, 1] + grad_theta[*i] * grad_phi[*j]
-        hess_phi_phi = hess_logpsi[:, 1, :, 1] + grad_phi[*i] * grad_phi[*j]
+
         # Note that theta_hat_prime alrealdy has a 1/sin factor
-        magnetic_term = Q * (theta_hat_prime * cos(theta) + r_hat)
+        magnetic_term = 2j * Q * r**2 / a**2 * grad_theta + r**4 / a**4 * Q**2
         # We first assume everything commutes, and add back extra terms at the end
         angular_momentum_square = jnp.sum(
-            2 * phi_hat[*i] * theta_hat_prime[*j] * hess_theta_phi
-            - phi_hat[*i] * phi_hat[*j] * hess_theta_theta
-            - (theta_hat_prime[*i] * theta_hat_prime[*j] * hess_phi_phi)
-            - (2j * magnetic_term[*j])
-            * (phi_hat[*i] * grad_theta[*i] - theta_hat_prime[*i] * grad_phi[*i])
-            + magnetic_term[*i] * magnetic_term[*j],
-        ) - jnp.sum(grad_theta / tan(theta))  # Diagonal extra terms
+            magnetic_term - jnp.diagonal(hess_logpsi[:, 1, :, 1]) - grad_theta ** 2
+        ) # Diagonal extra terms
 
         #        +----------------------------------------------------------+
         #        |                     Assemble outputs                     |
         #        +----------------------------------------------------------+
 
         other_observables = AngularMomenta(
-            angular_momentum_z=jnp.sum(grad_phi).imag,  # same as (-1j * d_phi).real
-            angular_momentum_z_square=-jnp.sum(hess_phi_phi).real,
+            angular_momentum_z=jnp.sum(grad_theta).imag - r**2 * Q / a**2,  # same as (-1j * d_phi).real
+            angular_momentum_z_square=angular_momentum_square.real,
             angular_momentum_square=angular_momentum_square.real,
         )
         return kinetic_energy, other_observables
 
     return _lapl_over_f
 
-
+# FIXME
 def local_energy(f: LogPsiNetwork, system: System) -> LocalEnergy:
     """Creates the function to evaluate the local energy.
 
@@ -189,11 +204,16 @@ def local_energy(f: LogPsiNetwork, system: System) -> LocalEnergy:
         energy of the wavefunction given the parameters params, RNG state key,
         and a single MCMC configuration in data.
     """
-    Q = system.flux / 2
-    radius = jnp.array(system.radius or jnp.sqrt(Q))
+    Q = system.flux
+    d = system.d
+    N = system.nspins[0] + system.nspins[1]
+    radius = jnp.array(system.radius or jnp.sqrt(2*Q))
     ke = make_local_kinetic_energy(f, Q, radius)
-    pe = make_potential(system.interaction_type, Q, radius)
+    pe = make_ee_potential(system.interaction_type, Q)
 
+    Vc = jnp.load("Vc.npy")
+    r_grid = jnp.load("r.npy")
+    pc = make_conf_potential(Q, radius, d, r_grid, Vc, N)
     def _e_l(
         params: ArrayTree, data: jnp.ndarray
     ) -> tuple[jnp.ndarray, OtherObservables]:
@@ -206,7 +226,10 @@ def local_energy(f: LogPsiNetwork, system: System) -> LocalEnergy:
         Returns:
             Local energy and other observables.
         """
-        potential = pe(data) * system.interaction_strength
+        # FIXME
+        ee_potential = pe(data) * system.interaction_strength
+        conf_potential = pc(data)
+        potential = ee_potential + conf_potential
         kinetic, angular_momenta = ke(params, data)
         return kinetic + potential, angular_momenta | {
             "potential": potential,

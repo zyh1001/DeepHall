@@ -51,7 +51,7 @@ def mh_update(
         num_accepts: update running total of number of accepted MH moves.
     """
     key_new, key_sample, key_cond = jax.random.split(key, 3)
-    x2 = sph_sampling(key_sample, x1, stddev)
+    x2 = disk_sampling(key_sample, x1, stddev)
     lp_2 = 2.0 * f(params, x2).real  # log prob of proposal
     ratio = lp_2 - lp_1
 
@@ -64,8 +64,8 @@ def mh_update(
     return x_new, key_new, lp_new, num_accepts
 
 
-def torus_sampling(key: PRNGKey, x1: jnp.ndarray, stddev: float) -> jnp.ndarray:
-    """Propose electrons MCMC move on the torus.
+def disk_sampling(key: PRNGKey, x1: jnp.ndarray, stddev: float) -> jnp.ndarray:
+    """Propose electrons MCMC move on the sphere.
 
     Suppose the electron is at the north pole, similar to the Euclidean Gaussian MCMC
     proposal, the proposal on the sphere also obeys Gaussian distribution in theta and
@@ -82,14 +82,26 @@ def torus_sampling(key: PRNGKey, x1: jnp.ndarray, stddev: float) -> jnp.ndarray:
     Returns:
         New electron configuration.
     """
-    x, y = x1[..., 0], x1[..., 1]
-    key_x, key_y = jax.random.split(key)
-    # sigma=?
-    dx = jnp.random.normal(key_x, shape=x.shape) % 1 * stddev
-    dy = jnp.random.normal(key_y, shape=y.shape) % 1 * stddev
-    x = (x + dx + 1) % 1
-    y = (y + dy + 1) % 1
-    return jnp.stack([x, y], axis=-1)
+    r, theta = x1[..., 0], x1[..., 1]
+
+    # polar -> cartesian
+    x = r * jnp.cos(theta)
+    y = r * jnp.sin(theta)
+
+    key_dx, key_dy = jax.random.split(key)
+
+    dx = jax.random.normal(key_dx, x.shape) * stddev
+    dy = jax.random.normal(key_dy, y.shape) * stddev
+
+    x_new = x + dx
+    y_new = y + dy
+
+    # cartesian -> polar
+    r_new = jnp.sqrt(x_new**2 + y_new**2)
+    theta_new = jnp.arctan2(y_new, x_new)
+    theta_new = jnp.mod(theta_new, 2 * jnp.pi)
+
+    return jnp.stack([r_new, theta_new], axis=-1)
 
 
 def sph_sampling(key: PRNGKey, x1: jnp.ndarray, stddev: float) -> jnp.ndarray:
