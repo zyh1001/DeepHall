@@ -35,6 +35,8 @@ s
     Returns:
         potential energy
     """
+    result = jnp.sum(jnp.triu(1 / r_ee, k=1))
+
     return jnp.sum(jnp.triu(1 / r_ee, k=1))
 
 
@@ -63,7 +65,10 @@ def make_conf_potential(Q: float, a: jnp.ndarray, d: jnp.ndarray, r_grid, Vc_tab
         # 根据条件选择势能
         V_vals = jnp.where(r < 15*a, V_small, V_large)
         # 对所有电子求和（axis=-1对最后一个维度求和）
-        return jnp.sum(V_vals, axis=-1)  # 返回总势能
+
+        result = jnp.sum(V_vals, axis=-1)
+
+        return result  # 返回总势能
     return conf
 
 def harmonic_potential(cos12: jnp.ndarray, Q: float) -> jnp.ndarray:
@@ -104,8 +109,10 @@ def make_ee_potential(
 
         cart_e = jnp.stack([x, y], axis=-1)
 
-        cart_ee = cart_e[:, None] - cart_e[None, :]
-        return potential_function(cart_ee)
+        cart_ee = cart_e[..., :, None, :] - cart_e[..., None, :, :]
+        r_ee = jnp.linalg.norm(cart_ee, axis=-1)
+        r_ee = jnp.maximum(r_ee, 1e-8)  # 防止除以 0
+        return potential_function(r_ee)
 
     return potential
 
@@ -115,7 +122,8 @@ def make_local_kinetic_energy(f: LogPsiNetwork, Q: float, a: jnp.ndarray):
 
     Args:
         f: Callable which evaluates the log of the magnitude of the wavefunction.
-        Q: Monopole strength
+        Q:
+          Monopole strength
         r: Sphere radius
 
     Returns:
@@ -228,9 +236,12 @@ def local_energy(f: LogPsiNetwork, system: System) -> LocalEnergy:
         """
         # FIXME
         ee_potential = pe(data) * system.interaction_strength
+        jax.debug.print("ee_potential: {}", ee_potential)
         conf_potential = pc(data)
+        jax.debug.print("conf_potential: {}", conf_potential )
         potential = ee_potential + conf_potential
         kinetic, angular_momenta = ke(params, data)
+        jax.debug.print("kinetic: {}", kinetic)
         return kinetic + potential, angular_momenta | {
             "potential": potential,
             "kinetic": kinetic,

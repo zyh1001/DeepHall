@@ -51,7 +51,7 @@ class DeepHallAdaptor(NetworkAdaptor[HallSystem]):
         model = make_network(cfg.system, cfg.network)
         self.network = jax.jit(model.apply)
         self.batch_per_device = cfg.batch_size // jax.device_count()
-        Q = cfg.system.flux / 2
+        Q = cfg.system.flux
         radius = jnp.array(cfg.system.radius or jnp.sqrt(Q))
         self.kinetic_energy = make_local_kinetic_energy(self.network, Q, radius)
         self.potential_energy = make_potential(cfg.system.interaction_type, Q, radius)

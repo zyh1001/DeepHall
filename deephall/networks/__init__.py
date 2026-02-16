@@ -21,7 +21,7 @@ from deephall.networks.psiformer import Psiformer
 
 
 def make_network(system: System, network: Network) -> nn.Module:
-    Q = system.flux / 2
+    Q = system.flux
     if network.type == NetworkType.free:
         return Free(flux=system.flux, nspins=system.nspins)
     if network.type == NetworkType.laughlin:

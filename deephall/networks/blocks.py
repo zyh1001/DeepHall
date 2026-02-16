@@ -37,7 +37,7 @@ class FeaturedOrbitals(nn.Module):
 
 class Orbitals(nn.Module):
     type: OrbitalType
-    Q: float
+    Q: int
     nspins: tuple[int, int]
     ndets: int
 
@@ -62,8 +62,9 @@ class Orbitals(nn.Module):
             orbitals = self.lll_weight(orbitals).transpose((0, 3, 1, 2))
 
         m = jnp.arange(0, int(self.Q + 1))
-        z = r * jnp.exp(1j  * theta)[..., None]
-        envelope = self.norm_factor * z ** m
+        z = r * jnp.exp(1j  * theta)
+        z = z[..., None]
+        envelope = self.norm_factor * z ** m * jnp.exp(- jnp.abs(z)**2 / 4)
         orbitals = jnp.sum(orbitals * envelope[..., None, None], axis=1)
 
         return jnp.moveaxis(orbitals, -1, 0)  # Move ndets dim to the front
@@ -105,7 +106,7 @@ class Jastrow(nn.Module):
 
         return jastrow_ee_anti + jastrow_ee_par
 
-    def calculated_r_ee(electrons: jnp.ndarray):
+    def calculated_r_ee(self, electrons: jnp.ndarray) -> jnp.ndarray:
 
         r = electrons[..., 0]
         theta = electrons[..., 1]
@@ -116,6 +117,9 @@ class Jastrow(nn.Module):
 
         cart_e = jnp.stack([x, y], axis=-1)
 
-        cart_ee = cart_e[:, None] - cart_e[None, :]
+        # pairwise vectors, shape (..., nelec, nelec, 2)
+        cart_ee = cart_e[..., :, None, :] - cart_e[..., None, :, :]
         
-        return jnp.linalg.norm(cart_ee, axis=-1)
+        distances = jnp.linalg.norm(cart_ee, axis=-1)
+        distances = jnp.maximum(distances, 1e-8)  # 防止除以 0
+        return distances        

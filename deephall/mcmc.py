@@ -98,8 +98,8 @@ def disk_sampling(key: PRNGKey, x1: jnp.ndarray, stddev: float) -> jnp.ndarray:
 
     # cartesian -> polar
     r_new = jnp.sqrt(x_new**2 + y_new**2)
+    r_new = jnp.maximum(r_new, 1e-8)  # 防止 r_new 为 0 或 NaN
     theta_new = jnp.arctan2(y_new, x_new)
-    theta_new = jnp.mod(theta_new, 2 * jnp.pi)
 
     return jnp.stack([r_new, theta_new], axis=-1)
 
