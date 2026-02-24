@@ -23,6 +23,7 @@ The details for the orbital construction are located in `blocks.py`.
 
 from flax import linen as nn
 from jax import numpy as jnp
+import jax
 
 from deephall.config import OrbitalType
 
@@ -72,7 +73,24 @@ class Psiformer(nn.Module):
 
     def __call__(self, electrons):
         orbitals = self.orbitals(electrons)
+        # Diagnostic: check orbitals for NaN/Inf before slogdet
+
+        jax.debug.print(
+            "orbitals finite: {ok}, orbitals_min_re: {minre}, orbitals_max_re: {maxre}",
+            ok=jnp.all(jnp.isfinite(orbitals)),
+            minre=jnp.min(jnp.nan_to_num(jnp.real(orbitals))),
+            maxre=jnp.max(jnp.nan_to_num(jnp.real(orbitals))),
+        )
+
         signs, logdets = jnp.linalg.slogdet(orbitals)
+
+        jax.debug.print(
+            "logdets finite: {ok}, logdets_min: {minv}, logdets_max: {maxv}",
+            ok=jnp.all(jnp.isfinite(logdets)),
+            minv=jnp.min(jnp.nan_to_num(logdets)),
+            maxv=jnp.max(jnp.nan_to_num(logdets)),
+        )
+
         logmax = jnp.max(logdets)  # logsumexp trick
         return jnp.log(jnp.sum(signs * jnp.exp(logdets - logmax))) + logmax
 
@@ -90,4 +108,11 @@ class Psiformer(nn.Module):
             type=self.orbital_type, Q=self.Q, nspins=self.nspins, ndets=self.ndets
         )(h_one, r, theta)
         jastrow = Jastrow(self.nspins)(electrons)
+
+        jax.debug.print(
+            "jastrow finite: {ok}, jastrow_val: {v}",
+            ok=jnp.all(jnp.isfinite(jastrow)),
+            v=jnp.nan_to_num(jastrow),
+        )
+
         return jnp.exp(jastrow / sum(self.nspins)) * orbitals

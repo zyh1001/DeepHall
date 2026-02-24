@@ -15,6 +15,7 @@
 import numpy as np
 from flax import linen as nn
 from jax import numpy as jnp
+import jax
 from scipy import special as ss
 
 from deephall.config import OrbitalType
@@ -37,7 +38,7 @@ class FeaturedOrbitals(nn.Module):
 
 class Orbitals(nn.Module):
     type: OrbitalType
-    Q: int
+    Q: float
     nspins: tuple[int, int]
     ndets: int
 
@@ -58,6 +59,15 @@ class Orbitals(nn.Module):
 
     def __call__(self, h_one, r, theta):
         orbitals = self.featured_orbitals(h_one)
+        # Diagnostic: check normalization factors
+      
+        jax.debug.print(
+            "norm_factor finite: {ok}, min: {mn}, max: {mx}",
+            ok=jnp.all(jnp.isfinite(self.norm_factor)),
+            mn=jnp.min(jnp.nan_to_num(self.norm_factor)),
+            mx=jnp.max(jnp.nan_to_num(self.norm_factor)),
+        )
+        
         if self.type == OrbitalType.sparse:
             orbitals = self.lll_weight(orbitals).transpose((0, 3, 1, 2))
 
@@ -104,7 +114,14 @@ class Jastrow(nn.Module):
         else:
             jastrow_ee_anti = jnp.asarray(0.0)
 
-        return jastrow_ee_anti + jastrow_ee_par
+        total_jastrow = jastrow_ee_anti + jastrow_ee_par
+        jax.debug.print(
+            "jastrow finite: {ok}, jastrow_total: {v}",
+            ok=jnp.all(jnp.isfinite(total_jastrow)),
+            v=jnp.nan_to_num(total_jastrow),
+        )
+
+        return total_jastrow
 
     def calculated_r_ee(self, electrons: jnp.ndarray) -> jnp.ndarray:
 
