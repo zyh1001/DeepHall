@@ -52,11 +52,14 @@ def init_guess(key: PRNGKey, batch: int, nelec: int, Q: int):
     a = jnp.sqrt(2*Q)
     key1, key2 = jax.random.split(key)
     u1 = jax.random.uniform(key1, (batch, nelec), minval=0, maxval=1)
-    u2 = jax.random.uniform(key2, (batch, nelec), minval=0, maxval=1)
+    u2 = jax.random.uniform(key2, (batch, nelec), minval=-1, maxval=1)
     # 生成圆盘上的均匀分布
     r = jnp.sqrt(u1) * a
-    theta = jnp.sqrt(u2) * 2 * jnp.pi
-    return jnp.stack([r, theta], axis=-1)
+    theta = jax.random.uniform(key2, (batch, nelec), minval=0, maxval=2 * jnp.pi)
+    result = jnp.stack([r, theta], axis=-1)
+    jax.debug.print("shape of init_guess{}", result.shape)
+    jax.debug.breakpoint()
+    return result
 
 
 def initialize_state(cfg: Config, model: nn.Module):

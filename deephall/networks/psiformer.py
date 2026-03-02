@@ -39,10 +39,17 @@ class PsiformerLayers(nn.Module):
     def __call__(self, electrons: jnp.ndarray, spins: jnp.ndarray):
         r, theta = electrons[..., 0], electrons[..., 1]
         h_one = self.input_feature(r, theta, spins)
+        jax.debug.print("shape of original h_one: {shape}", shape = h_one.shape)
         attention_dim = self.num_heads * self.heads_dim
         h_one = nn.Dense(attention_dim, use_bias=False)(h_one)
+        
         for _ in range(self.num_layers):
-            attn_out = nn.MultiHeadAttention(num_heads=self.num_heads)(h_one)
+            jax.debug.print("shape of h_one: {shape}", shape = h_one.shape)
+            jax.debug.breakpoint()
+            
+            attn_out = nn.MultiHeadAttention(num_heads=self.num_heads,
+                                             qkv_features=attention_dim,
+                                             out_features=attention_dim)(h_one)
             h_one += nn.Dense(attention_dim, use_bias=False)(attn_out)
             h_one = nn.LayerNorm(epsilon=1e-5)(h_one)
             h_one += nn.tanh(nn.Dense(attention_dim)(h_one))
@@ -51,7 +58,7 @@ class PsiformerLayers(nn.Module):
 
 # FIXME
     def input_feature(self, r: jnp.ndarray, theta: jnp.ndarray, spins: jnp.ndarray):
-        r_normalized = r / jnp.max(r)
+       
         return jnp.stack(
             [
                 jnp.cos(theta) * r,
@@ -83,7 +90,7 @@ class Psiformer(nn.Module):
         )
 
         signs, logdets = jnp.linalg.slogdet(orbitals)
-
+        jax.debug.print("shape of logdets:{shape}", shape = logdets.shape)
         jax.debug.print(
             "logdets finite: {ok}, logdets_min: {minv}, logdets_max: {maxv}",
             ok=jnp.all(jnp.isfinite(logdets)),
@@ -92,6 +99,8 @@ class Psiformer(nn.Module):
         )
 
         logmax = jnp.max(logdets)  # logsumexp trick
+        result  = jnp.log(jnp.sum(signs * jnp.exp(logdets - logmax))) + logmax
+        jax.debug.print("f(x)=:{result}", result=result)
         return jnp.log(jnp.sum(signs * jnp.exp(logdets - logmax))) + logmax
 
     # FIXME

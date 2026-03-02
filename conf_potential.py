@@ -117,8 +117,8 @@ def pre_compute(N_spins: int, Q: int, d: float=0.1, n_node: int=10000,
     r_vals = np.linspace(0.0, 15*a, n_node)
     
     current_file_directory = os.path.dirname(__file__)
-    path_vc = os.path.join(current_file_directory,f"quad{use_quad}_Vc.npy")
-    path_r = os.path.join(current_file_directory,f"quad{use_quad}_r.npy")
+    path_vc = os.path.join(current_file_directory,f"Vc_n{N_spins}_q{Q}.npy")
+    path_r = os.path.join(current_file_directory,f"r_n{N_spins}_q{Q}.npy")
 
     if use_quad == False:
         rp, wp = make_gauss_nodes(a, n_node)
@@ -127,7 +127,7 @@ def pre_compute(N_spins: int, Q: int, d: float=0.1, n_node: int=10000,
     else:
         Vc , err = quad_array(N_spins, r_vals, a, d, limit, epsrel)
         err_np = np.array(err)
-        path_err = os.path.join(current_file_directory,f"quad{use_quad}_err.npy")
+        path_err = os.path.join(current_file_directory,f"err_n{N_spins}_q{Q}.npy")
         np.save(path_err, err_np)
     # 转 numpy 保存
     Vc_np = np.array(Vc)
@@ -145,4 +145,4 @@ def pre_compute(N_spins: int, Q: int, d: float=0.1, n_node: int=10000,
         logging.error("Can\'t save data")
 if __name__ == "__main__":
     logging.info("Pre-computing confing potential")
-    pre_compute(1, 3, 0.1, use_quad = True)
+    pre_compute(6, 18, 0.1, use_quad = True)

@@ -33,7 +33,7 @@ class FeaturedOrbitals(nn.Module):
             for h_one_alpha in jnp.split(h_one, (self.nspins[0],))
             if len(h_one_alpha)
         ]
-        return jnp.concat(orbital_list)
+        return jnp.concat(orbital_list) # [nspins, Q+1,nspins,1]
 
 
 class Orbitals(nn.Module):
@@ -58,7 +58,7 @@ class Orbitals(nn.Module):
             self.lll_weight = nn.DenseGeneral(int(self.Q + 1), axis=1)
 
     def __call__(self, h_one, r, theta):
-        orbitals = self.featured_orbitals(h_one)
+        orbitals = self.featured_orbitals(h_one) # [nspins,Q+1,nspins]
         # Diagnostic: check normalization factors
       
         jax.debug.print(
@@ -74,9 +74,19 @@ class Orbitals(nn.Module):
         m = jnp.arange(0, int(self.Q + 1))
         z = r * jnp.exp(1j  * theta)
         z = z[..., None]
-        envelope = self.norm_factor * z ** m * jnp.exp(- jnp.abs(z)**2 / 4)
+        r_norm = r[..., None]
+        envelope = self.norm_factor * z ** m * jnp.exp(- r_norm**2 / 4)
+        jax.debug.print("print shapes in \'Orbitals\'")
+        jax.debug.print("shape of original obitals:{shape}", shape = orbitals.shape)
         orbitals = jnp.sum(orbitals * envelope[..., None, None], axis=1)
-
+        
+        jax.debug.print("shape of h_one:{shape}", shape = h_one.shape)
+        jax.debug.print("shape of r:{shape}", shape=r.shape)
+        jax.debug.print("shape of m:{shape}", shape=m.shape)
+        jax.debug.print("shape of z:{shape}", shape=z.shape)
+        jax.debug.print("shape of r_norm:{shape}", shape=r_norm.shape)
+        jax.debug.print("shape of envelope:{shape}", shape = envelope.shape)
+        jax.debug.print("shape of modified obitals:{shape}", shape = orbitals.shape)
         return jnp.moveaxis(orbitals, -1, 0)  # Move ndets dim to the front
 
 
@@ -121,6 +131,7 @@ class Jastrow(nn.Module):
             v=jnp.nan_to_num(total_jastrow),
         )
 
+
         return total_jastrow
 
     def calculated_r_ee(self, electrons: jnp.ndarray) -> jnp.ndarray:
@@ -134,9 +145,6 @@ class Jastrow(nn.Module):
 
         cart_e = jnp.stack([x, y], axis=-1)
 
-        # pairwise vectors, shape (..., nelec, nelec, 2)
-        cart_ee = cart_e[..., :, None, :] - cart_e[..., None, :, :]
-        
-        distances = jnp.linalg.norm(cart_ee, axis=-1)
-        distances = jnp.maximum(distances, 1e-8)  # 防止除以 0
-        return distances        
+        cart_ee = cart_e[None] - cart_e[:, None]
+        eye = jnp.eye(cart_ee.shape[0])
+        return jnp.linalg.norm(cart_ee + eye[..., None], axis=-1) * (1.0 - eye)

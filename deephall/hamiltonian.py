@@ -107,10 +107,9 @@ def make_ee_potential(
 
         cart_e = jnp.stack([x, y], axis=-1)
 
-        cart_ee = cart_e[..., :, None, :] - cart_e[..., None, :, :]
-        r_ee = jnp.linalg.norm(cart_ee, axis=-1)
-        r_ee = jnp.maximum(r_ee, 1e-8)  # 防止除以 0
-        return potential_function(r_ee)
+        cart_ee = cart_e[None] - cart_e[:, None]
+        eye = jnp.eye(cart_ee.shape[0])
+        return jnp.linalg.norm(cart_ee + eye[..., None], axis=-1) * (1.0 - eye)
 
     return potential
 
@@ -203,7 +202,8 @@ def make_local_kinetic_energy(f: LogPsiNetwork, Q: float, a: jnp.ndarray):
         # $\nabla^2 \log \psi$ on disk
         grad_grad_logpsi = jnp.sum(
             jnp.diagonal(hess_logpsi[:, 0, :, 0])
-            + jnp.diagonal(hess_logpsi[:, 1, :, 1]) / sin_theta ** 2
+            + jnp.diagonal(hess_logpsi[:, 1, :, 1]) / r ** 2
+            + grad_r / r
         )
         jax.debug.print("grad_grad_logpsi finite:{ok}, value:{v}", ok=jnp.isfinite(grad_grad_logpsi), v=jnp.nan_to_num(grad_grad_logpsi))
         # See section 3.10.3 of "Composite Fermions"
@@ -272,8 +272,8 @@ def local_energy(f: LogPsiNetwork, system: System) -> LocalEnergy:
     ke = make_local_kinetic_energy(f, Q, radius)
     pe = make_ee_potential(system.interaction_type, Q)
 
-    Vc = jnp.load("Vc.npy")
-    r_grid = jnp.load("r.npy")
+    Vc = jnp.load(f"Vc_n{N}_q{Q}.npy")
+    r_grid = jnp.load(f"r_n{N}_q{Q}.npy")
     pc = make_conf_potential(Q, radius, d, r_grid, Vc, N)
     def _e_l(
         params: ArrayTree, data: jnp.ndarray
