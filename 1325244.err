@@ -1,0 +1,68 @@
++ git_commit: e467c4d
++ batch_size: 8
++ seed: 1772496808
++ system:
++   flux: 3
++   radius: null
++   d: 0.1
++   nspins:
++   - 1
++   - 0
++   interaction_strength: 1.0
++   lz_center: 0.0
++   lz_penalty: 0.0
++   l2_penalty: 0.0
++   interaction_type: coulomb
++ network:
++   type: psiformer
++   orbital: full
++   psiformer:
++     num_heads: 4
++     heads_dim: 64
++     num_layers: 2
++     determinants: 1
++ mcmc:
++   steps: 10
++   width: 0.1
++   burn_in: 200
++   adapt_frequency: 100
++ optim:
++   iterations: 25
++   optimizer: adam
++   adam:
++     lr:
++       rate: 0.005
++       decay: 1.0
++       delay: 2000.0
++   kfac:
++     lr:
++       rate: 0.05
++       decay: 1.0
++       delay: 2000.0
++ log:
++   save_path: null
++   restore_path: null
++   save_time_interval: 600
++   save_step_interval: 1000
++   initial_energy: true
+jax.debug.callback failed
+Traceback (most recent call last):
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/jax/_src/debugging.py", line 93, in debug_callback_impl
+    callback(*args)
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/jax/_src/debugging.py", line 278, in _flat_callback
+    callback(*args, **kwargs)
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/jax/_src/debugger/core.py", line 220, in _breakpoint_callback
+    debugger(frames, thread_id, **kwargs)
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/jax/_src/debugger/cli_debugger.py", line 167, in run_debugger
+    CliDebugger(frames, thread_id, **kwargs).run()
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/jax/_src/debugger/cli_debugger.py", line 160, in run
+    self.cmdloop()
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/cmd.py", line 138, in cmdloop
+    stop = self.onecmd(line)
+           ^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/cmd.py", line 217, in onecmd
+    return func(arg)
+           ^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/jax/_src/debugger/cli_debugger.py", line 146, in do_quit
+    sys.exit(0)
+SystemExit: 0

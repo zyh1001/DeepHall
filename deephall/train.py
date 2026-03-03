@@ -58,7 +58,6 @@ def init_guess(key: PRNGKey, batch: int, nelec: int, Q: int):
     theta = jax.random.uniform(key2, (batch, nelec), minval=0, maxval=2 * jnp.pi)
     result = jnp.stack([r, theta], axis=-1)
     jax.debug.print("shape of init_guess{}", result.shape)
-    jax.debug.breakpoint()
     return result
 
 
