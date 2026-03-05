@@ -1,0 +1,117 @@
++ git_commit: e84e4a4
++ batch_size: 8
++ seed: 1772499093
++ system:
++   flux: 6
++   radius: null
++   d: 0.1
++   nspins:
++   - 2
++   - 0
++   interaction_strength: 1.0
++   lz_center: 0.0
++   lz_penalty: 0.0
++   l2_penalty: 0.0
++   interaction_type: coulomb
++ network:
++   type: psiformer
++   orbital: full
++   psiformer:
++     num_heads: 4
++     heads_dim: 64
++     num_layers: 2
++     determinants: 1
++ mcmc:
++   steps: 10
++   width: 0.1
++   burn_in: 200
++   adapt_frequency: 100
++ optim:
++   iterations: 25
++   optimizer: adam
++   adam:
++     lr:
++       rate: 0.005
++       decay: 1.0
++       delay: 2000.0
++   kfac:
++     lr:
++       rate: 0.05
++       decay: 1.0
++       delay: 2000.0
++ log:
++   save_path: null
++   restore_path: null
++   save_time_interval: 600
++   save_step_interval: 1000
++   initial_energy: true
+Start VMC with 1 JAX devices
+Burn in MCMC complete
+Initial energy: 11.556427
+Traceback (most recent call last):
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/jax/_src/lax/lax.py", line 149, in broadcast_shapes
+    return _broadcast_shapes_cached(*shapes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/jax/_src/util.py", line 302, in wrapper
+    return cached(config.trace_context() if trace_context_in_key else _ignore(),
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/jax/_src/util.py", line 296, in cached
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/jax/_src/lax/lax.py", line 155, in _broadcast_shapes_cached
+    return _broadcast_shapes_uncached(*shapes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/jax/_src/lax/lax.py", line 171, in _broadcast_shapes_uncached
+    raise ValueError(f"Incompatible shapes for broadcasting: shapes={list(shapes)}")
+ValueError: Incompatible shapes for broadcasting: shapes=[(8, 1), (8, 2, 2)]
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/data/home/zyh/miniconda3/envs/deephall/bin/deephall", line 7, in <module>
+    sys.exit(cli())
+             ^^^^^
+  File "/data/home/zyh/DeepHall/deephall/train.py", line 233, in cli
+    train(Config.from_dict(config))
+  File "/data/home/zyh/DeepHall/deephall/train.py", line 154, in train
+    for step, state, stats, pmove in train_loop(cfg, log_manager):
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/DeepHall/deephall/train.py", line 141, in train_loop
+    state, stats = training_step(state, subkey)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/DeepHall/deephall/optimizers/adam.py", line 38, in step
+    stats, grads = loss_grad_fn(params, data)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/DeepHall/deephall/loss.py", line 111, in loss_and_grad
+    tangent_out = jax.tree.map(
+                  ^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/jax/_src/tree.py", line 155, in map
+    return tree_util.tree_map(f, tree, *rest, is_leaf=is_leaf)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/DeepHall/deephall/loss.py", line 112, in <lambda>
+    lambda real, imag: loss_prod(real - 1j * imag, diff),
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/DeepHall/deephall/loss.py", line 76, in loss_prod
+    return jnp.nan_to_num(2 * jnp.nanmean(grad_logpsi_conj * diff, axis=0))
+                                          ~~~~~~~~~~~~~~~~~^~~~~~
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/jax/_src/numpy/array_methods.py", line 1050, in op
+    return getattr(self.aval, f"_{name}")(self, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/jax/_src/numpy/array_methods.py", line 573, in deferring_binary_op
+    return binary_op(*args)
+           ^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/jax/_src/numpy/ufunc_api.py", line 177, in __call__
+    return call(*args)
+           ^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/jax/_src/numpy/ufuncs.py", line 1186, in _multiply
+    x, y = promote_args("multiply", x, y)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/jax/_src/numpy/util.py", line 362, in promote_args
+    return promote_shapes(fun_name, *promote_dtypes(*args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/jax/_src/numpy/util.py", line 227, in promote_shapes
+    result_rank = len(lax.broadcast_shapes(*shapes))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Incompatible shapes for broadcasting: shapes=[(8, 1), (8, 2, 2)]
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.

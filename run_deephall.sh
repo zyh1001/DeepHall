@@ -16,4 +16,4 @@ source /data/home/zyh/miniconda3/etc/profile.d/conda.sh
 conda activate deephall
 
 # 运行 DeepHall 测试
-deephall --debug 'system.nspins=[1,0]' system.flux=3 batch_size=8 optim.optimizer=adam optim.iterations=25 system.d=0.1
+deephall 'system.nspins=[1,0]' system.flux=3 batch_size=8 optim.optimizer=adam optim.iterations=25 system.d=0.1

@@ -45,11 +45,9 @@ class PsiformerLayers(nn.Module):
         
         for _ in range(self.num_layers):
             jax.debug.print("shape of h_one: {shape}", shape = h_one.shape)
-            jax.debug.breakpoint()
+            # jax.debug.breakpoint()
             
-            attn_out = nn.MultiHeadAttention(num_heads=self.num_heads,
-                                             qkv_features=attention_dim,
-                                             out_features=attention_dim)(h_one)
+            attn_out = nn.MultiHeadAttention(num_heads=self.num_heads)(h_one)
             h_one += nn.Dense(attention_dim, use_bias=False)(attn_out)
             h_one = nn.LayerNorm(epsilon=1e-5)(h_one)
             h_one += nn.tanh(nn.Dense(attention_dim)(h_one))

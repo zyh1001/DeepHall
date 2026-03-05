@@ -145,4 +145,4 @@ def pre_compute(N_spins: int, Q: int, d: float=0.1, n_node: int=10000,
         logging.error("Can\'t save data")
 if __name__ == "__main__":
     logging.info("Pre-computing confing potential")
-    pre_compute(6, 18, 0.1, use_quad = True)
+    pre_compute(2, 6, 0.1, use_quad = True)

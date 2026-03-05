@@ -1,0 +1,75 @@
++ git_commit: e84e4a4
++ batch_size: 8
++ seed: 1772498883
++ system:
++   flux: 6
++   radius: null
++   d: 0.1
++   nspins:
++   - 2
++   - 0
++   interaction_strength: 1.0
++   lz_center: 0.0
++   lz_penalty: 0.0
++   l2_penalty: 0.0
++   interaction_type: coulomb
++ network:
++   type: psiformer
++   orbital: full
++   psiformer:
++     num_heads: 4
++     heads_dim: 64
++     num_layers: 2
++     determinants: 1
++ mcmc:
++   steps: 10
++   width: 0.1
++   burn_in: 200
++   adapt_frequency: 100
++ optim:
++   iterations: 25
++   optimizer: adam
++   adam:
++     lr:
++       rate: 0.005
++       decay: 1.0
++       delay: 2000.0
++   kfac:
++     lr:
++       rate: 0.05
++       decay: 1.0
++       delay: 2000.0
++ log:
++   save_path: null
++   restore_path: null
++   save_time_interval: 600
++   save_step_interval: 1000
++   initial_energy: true
+Traceback (most recent call last):
+  File "/data/home/zyh/miniconda3/envs/deephall/bin/deephall", line 7, in <module>
+    sys.exit(cli())
+             ^^^^^
+  File "/data/home/zyh/DeepHall/deephall/train.py", line 233, in cli
+    train(Config.from_dict(config))
+  File "/data/home/zyh/DeepHall/deephall/train.py", line 154, in train
+    for step, state, stats, pmove in train_loop(cfg, log_manager):
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/DeepHall/deephall/train.py", line 91, in train_loop
+    opt_init, training_step = optimizers.make_optimizer_step(cfg, network)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/DeepHall/deephall/optimizers/__init__.py", line 28, in make_optimizer_step
+    loss_grad_fn = make_loss_fn(network, cfg.system)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/DeepHall/deephall/loss.py", line 62, in make_loss_fn
+    loss_fn = local_energy(network, system)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/DeepHall/deephall/hamiltonian.py", line 286, in local_energy
+    Vc = jnp.load(f"Vc_n{N}_q{Q}.npy")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/jax/_src/numpy/lax_numpy.py", line 360, in load
+    out = np.load(file, *args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/numpy/lib/_npyio_impl.py", line 454, in load
+    fid = stack.enter_context(open(os.fspath(file), "rb"))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'Vc_n2_q6.npy'
