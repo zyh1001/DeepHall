@@ -1,0 +1,191 @@
++ git_commit: dad8181
++ batch_size: 128
++ seed: 1772707022
++ system:
++   flux: 3
++   radius: null
++   d: 0.1
++   nspins:
++   - 1
++   - 0
++   interaction_strength: 1.0
++   lz_center: 0.0
++   lz_penalty: 0.0
++   l2_penalty: 0.0
++   interaction_type: coulomb
++ network:
++   type: psiformer
++   orbital: full
++   psiformer:
++     num_heads: 4
++     heads_dim: 64
++     num_layers: 2
++     determinants: 1
++ mcmc:
++   steps: 10
++   width: 0.1
++   burn_in: 200
++   adapt_frequency: 100
++ optim:
++   iterations: 100
++   optimizer: kfac
++   adam:
++     lr:
++       rate: 0.005
++       decay: 1.0
++       delay: 2000.0
++   kfac:
++     lr:
++       rate: 0.05
++       decay: 1.0
++       delay: 2000.0
++ log:
++   save_path: null
++   restore_path: null
++   save_time_interval: 600
++   save_step_interval: 1000
++   initial_energy: true
+INFO:absl:==================================================
+INFO:absl:Graph parameter registrations:
+INFO:absl:{'params': {'Jastrow_0': {'ee_anti': 'Auto[scale_and_shift_tag_0]'},
+            'Orbitals_0': {'featured_orbitals': {'DenseGeneral_0': {'bias': 'Auto[repeated_dense_13]',
+                                                                    'kernel': 'Auto[repeated_dense_13]'},
+                                                 'DenseGeneral_1': {'bias': 'Auto[repeated_dense_14]',
+                                                                    'kernel': 'Auto[repeated_dense_14]'}}},
+            'PsiformerLayers_0': {'Dense_0': {'kernel': 'Auto[repeated_dense_0]'},
+                                  'Dense_1': {'kernel': 'Auto[repeated_dense_5]'},
+                                  'Dense_2': {'bias': 'Auto[repeated_dense_6]',
+                                              'kernel': 'Auto[repeated_dense_6]'},
+                                  'Dense_3': {'kernel': 'Auto[repeated_dense_11]'},
+                                  'Dense_4': {'bias': 'Auto[repeated_dense_12]',
+                                              'kernel': 'Auto[repeated_dense_12]'},
+                                  'LayerNorm_0': {'bias': 'Orphan',
+                                                  'scale': 'Orphan'},
+                                  'LayerNorm_1': {'bias': 'Orphan',
+                                                  'scale': 'Orphan'},
+                                  'LayerNorm_2': {'bias': 'Orphan',
+                                                  'scale': 'Orphan'},
+                                  'LayerNorm_3': {'bias': 'Orphan',
+                                                  'scale': 'Orphan'},
+                                  'MultiHeadAttention_0': {'key': {'bias': 'Auto[repeated_dense_2]',
+                                                                   'kernel': 'Auto[repeated_dense_2]'},
+                                                           'out': {'bias': 'Auto[repeated_dense_4]',
+                                                                   'kernel': 'Auto[repeated_dense_4]'},
+                                                           'query': {'bias': 'Auto[repeated_dense_1]',
+                                                                     'kernel': 'Auto[repeated_dense_1]'},
+                                                           'value': {'bias': 'Auto[repeated_dense_3]',
+                                                                     'kernel': 'Auto[repeated_dense_3]'}},
+                                  'MultiHeadAttention_1': {'key': {'bias': 'Auto[repeated_dense_8]',
+                                                                   'kernel': 'Auto[repeated_dense_8]'},
+                                                           'out': {'bias': 'Auto[repeated_dense_10]',
+                                                                   'kernel': 'Auto[repeated_dense_10]'},
+                                                           'query': {'bias': 'Auto[repeated_dense_7]',
+                                                                     'kernel': 'Auto[repeated_dense_7]'},
+                                                           'value': {'bias': 'Auto[repeated_dense_9]',
+                                                                     'kernel': 'Auto[repeated_dense_9]'}}}}}
+INFO:absl:==================================================
+Start VMC with 1 JAX devices
+Burn in MCMC complete
+Initial energy: 1.8953173
+step=0, pmove=0.94, energy=1.7264, energy_imag=+0.0244, variance=1.0324, Lz=-1.7730, L_square=6.8488
+step=1, pmove=0.95, energy=1.4413, energy_imag=-0.0439, variance=0.7032, Lz=-2.0059, L_square=6.8287
+step=2, pmove=0.95, energy=1.2412, energy_imag=+0.0123, variance=0.6443, Lz=-2.2454, L_square=8.0533
+step=3, pmove=0.94, energy=1.2239, energy_imag=-0.0493, variance=0.3593, Lz=-2.2649, L_square=8.4856
+step=4, pmove=0.96, energy=1.0979, energy_imag=-0.0211, variance=0.2624, Lz=-2.2415, L_square=8.0389
+step=5, pmove=0.95, energy=0.9599, energy_imag=-0.0178, variance=0.1755, Lz=-2.3377, L_square=8.8175
+step=6, pmove=0.94, energy=0.8121, energy_imag=-0.0295, variance=0.2582, Lz=-2.4213, L_square=9.1382
+step=7, pmove=0.94, energy=0.6466, energy_imag=+0.0013, variance=0.3093, Lz=-2.6337, L_square=10.6719
+step=8, pmove=0.93, energy=0.5572, energy_imag=+0.0983, variance=0.2405, Lz=-2.6978, L_square=11.2134
+step=9, pmove=0.95, energy=0.4633, energy_imag=+0.0314, variance=0.4636, Lz=-2.8905, L_square=13.1906
+step=10, pmove=0.91, energy=0.4723, energy_imag=+0.4290, variance=1.1298, Lz=-2.6687, L_square=11.4334
+step=11, pmove=0.95, energy=0.2172, energy_imag=+0.1161, variance=0.2260, Lz=-3.1189, L_square=14.2678
+step=12, pmove=0.92, energy=0.4021, energy_imag=+0.0772, variance=1.1102, Lz=-2.7669, L_square=12.3289
+step=13, pmove=0.93, energy=0.0086, energy_imag=+0.0619, variance=0.1309, Lz=-3.3492, L_square=16.1328
+step=14, pmove=0.94, energy=0.0373, energy_imag=+0.0148, variance=0.1442, Lz=-3.1902, L_square=15.1848
+step=15, pmove=0.94, energy=0.0236, energy_imag=+0.0647, variance=0.1920, Lz=-3.2573, L_square=15.1973
+step=16, pmove=0.93, energy=-0.0397, energy_imag=+0.0624, variance=0.1084, Lz=-3.1572, L_square=13.7730
+step=17, pmove=0.93, energy=-0.0295, energy_imag=+0.0395, variance=0.1376, Lz=-3.1935, L_square=14.2108
+step=18, pmove=0.94, energy=-0.0632, energy_imag=+0.0055, variance=0.1047, Lz=-3.2134, L_square=14.3109
+step=19, pmove=0.94, energy=-0.1002, energy_imag=+0.0441, variance=0.1189, Lz=-3.1114, L_square=13.3933
+step=20, pmove=0.93, energy=-0.0852, energy_imag=-0.0177, variance=0.1023, Lz=-3.0702, L_square=13.3559
+step=21, pmove=0.94, energy=-0.1230, energy_imag=+0.0501, variance=0.0864, Lz=-2.9741, L_square=12.5571
+step=22, pmove=0.95, energy=-0.0795, energy_imag=-0.0411, variance=0.1002, Lz=-2.8547, L_square=11.9088
+step=23, pmove=0.94, energy=-0.1062, energy_imag=+0.0544, variance=0.0782, Lz=-2.8881, L_square=12.1363
+step=24, pmove=0.95, energy=-0.0748, energy_imag=-0.0131, variance=0.0842, Lz=-2.8920, L_square=12.3774
+step=25, pmove=0.95, energy=-0.1274, energy_imag=+0.0588, variance=0.0931, Lz=-2.9121, L_square=12.7232
+step=26, pmove=0.94, energy=-0.1099, energy_imag=-0.0313, variance=0.1244, Lz=-2.7542, L_square=11.5501
+step=27, pmove=0.92, energy=-0.1232, energy_imag=+0.0163, variance=0.0446, Lz=-2.7472, L_square=11.6768
+step=28, pmove=0.93, energy=-0.1361, energy_imag=-0.0595, variance=0.1859, Lz=-2.7301, L_square=11.6337
+step=29, pmove=0.96, energy=-0.1149, energy_imag=+0.0035, variance=0.0631, Lz=-2.7076, L_square=11.7354
+step=30, pmove=0.94, energy=-0.1222, energy_imag=-0.0545, variance=0.1652, Lz=-2.6861, L_square=11.4885
+step=31, pmove=0.95, energy=-0.1162, energy_imag=-0.0052, variance=0.0465, Lz=-2.5606, L_square=10.8257
+step=32, pmove=0.94, energy=-0.0958, energy_imag=+0.0035, variance=0.1577, Lz=-2.4108, L_square=9.8909
+step=33, pmove=0.95, energy=-0.1269, energy_imag=+0.0046, variance=0.0601, Lz=-2.3751, L_square=10.0453
+step=34, pmove=0.96, energy=-0.0980, energy_imag=+0.0303, variance=0.0938, Lz=-2.2208, L_square=8.8909
+step=35, pmove=0.94, energy=-0.1506, energy_imag=-0.0046, variance=0.0579, Lz=-2.2413, L_square=8.5325
+step=36, pmove=0.94, energy=-0.1257, energy_imag=+0.0083, variance=0.1019, Lz=-2.0854, L_square=7.4396
+step=37, pmove=0.94, energy=-0.1374, energy_imag=+0.0022, variance=0.0540, Lz=-2.1260, L_square=7.9796
+step=38, pmove=0.94, energy=-0.1094, energy_imag=-0.0042, variance=0.1072, Lz=-1.9858, L_square=7.3908
+step=39, pmove=0.94, energy=-0.1463, energy_imag=-0.0056, variance=0.0408, Lz=-1.9549, L_square=6.7314
+step=40, pmove=0.93, energy=-0.1399, energy_imag=-0.0092, variance=0.0717, Lz=-1.8112, L_square=6.1006
+step=41, pmove=0.94, energy=-0.1580, energy_imag=-0.0147, variance=0.0528, Lz=-1.8099, L_square=6.1098
+step=42, pmove=0.94, energy=-0.1704, energy_imag=-0.0077, variance=0.0571, Lz=-1.6918, L_square=5.0958
+step=43, pmove=0.95, energy=-0.1658, energy_imag=-0.0126, variance=0.0417, Lz=-1.7391, L_square=5.0633
+step=44, pmove=0.94, energy=-0.1751, energy_imag=-0.0103, variance=0.0536, Lz=-1.6846, L_square=5.2778
+step=45, pmove=0.95, energy=-0.1682, energy_imag=+0.0028, variance=0.0380, Lz=-1.6059, L_square=4.5773
+step=46, pmove=0.95, energy=-0.1949, energy_imag=+0.0001, variance=0.0584, Lz=-1.5764, L_square=4.8876
+step=47, pmove=0.95, energy=-0.1707, energy_imag=-0.0167, variance=0.0381, Lz=-1.4267, L_square=3.8423
+step=48, pmove=0.96, energy=-0.1671, energy_imag=-0.0023, variance=0.0312, Lz=-1.3921, L_square=3.8080
+step=49, pmove=0.94, energy=-0.1809, energy_imag=-0.0212, variance=0.0299, Lz=-1.3629, L_square=3.7850
+step=50, pmove=0.94, energy=-0.1734, energy_imag=+0.0095, variance=0.0318, Lz=-1.4105, L_square=4.2266
+step=51, pmove=0.94, energy=-0.1920, energy_imag=-0.0207, variance=0.0340, Lz=-1.3612, L_square=3.6100
+step=52, pmove=0.94, energy=-0.1733, energy_imag=+0.0181, variance=0.0273, Lz=-1.3865, L_square=3.9599
+step=53, pmove=0.95, energy=-0.1932, energy_imag=-0.0174, variance=0.0443, Lz=-1.3800, L_square=3.6150
+step=54, pmove=0.95, energy=-0.1798, energy_imag=+0.0096, variance=0.0180, Lz=-1.3749, L_square=3.7727
+step=55, pmove=0.94, energy=-0.1778, energy_imag=-0.0378, variance=0.0562, Lz=-1.4227, L_square=4.1644
+step=56, pmove=0.95, energy=-0.1770, energy_imag=+0.0079, variance=0.0285, Lz=-1.4613, L_square=4.2639
+step=57, pmove=0.95, energy=-0.1838, energy_imag=-0.0316, variance=0.0994, Lz=-1.3322, L_square=3.5853
+step=58, pmove=0.94, energy=-0.1706, energy_imag=+0.0044, variance=0.0274, Lz=-1.3487, L_square=3.7167
+step=59, pmove=0.94, energy=-0.1888, energy_imag=-0.0055, variance=0.0436, Lz=-1.4137, L_square=3.6773
+step=60, pmove=0.95, energy=-0.1316, energy_imag=-0.0239, variance=0.2891, Lz=-1.3853, L_square=3.7807
+step=61, pmove=0.95, energy=-0.1703, energy_imag=-0.0154, variance=0.0535, Lz=-1.3624, L_square=3.6037
+step=62, pmove=0.93, energy=-0.2017, energy_imag=+0.0280, variance=0.0398, Lz=-1.4402, L_square=3.9920
+step=63, pmove=0.94, energy=-0.1841, energy_imag=-0.0256, variance=0.0877, Lz=-1.3715, L_square=3.8712
+step=64, pmove=0.94, energy=-0.1895, energy_imag=-0.0010, variance=0.0414, Lz=-1.3727, L_square=3.5960
+step=65, pmove=0.94, energy=-0.1800, energy_imag=-0.0146, variance=0.0891, Lz=-1.3278, L_square=3.6896
+step=66, pmove=0.94, energy=-0.1917, energy_imag=-0.0018, variance=0.0389, Lz=-1.3291, L_square=3.3435
+step=67, pmove=0.95, energy=-0.1649, energy_imag=-0.0235, variance=0.0578, Lz=-1.2545, L_square=3.1488
+step=68, pmove=0.95, energy=-0.2035, energy_imag=+0.0111, variance=0.0421, Lz=-1.3507, L_square=3.2330
+step=69, pmove=0.95, energy=-0.1618, energy_imag=-0.0071, variance=0.0680, Lz=-1.3223, L_square=3.1879
+step=70, pmove=0.95, energy=-0.2030, energy_imag=-0.0070, variance=0.0761, Lz=-1.4041, L_square=3.5394
+step=71, pmove=0.95, energy=-0.1766, energy_imag=-0.0099, variance=0.0426, Lz=-1.3323, L_square=3.0795
+step=72, pmove=0.94, energy=-0.1982, energy_imag=+0.0059, variance=0.0499, Lz=-1.4558, L_square=3.8290
+step=73, pmove=0.94, energy=-0.1812, energy_imag=-0.0151, variance=0.0319, Lz=-1.2943, L_square=3.0197
+step=74, pmove=0.95, energy=-0.2003, energy_imag=+0.0182, variance=0.0402, Lz=-1.3311, L_square=3.5093
+step=75, pmove=0.94, energy=-0.1824, energy_imag=-0.0074, variance=0.0342, Lz=-1.2478, L_square=2.9329
+step=76, pmove=0.96, energy=-0.1782, energy_imag=+0.0019, variance=0.0396, Lz=-1.2946, L_square=3.2652
+step=77, pmove=0.95, energy=-0.1955, energy_imag=-0.0070, variance=0.0381, Lz=-1.2628, L_square=2.9860
+step=78, pmove=0.94, energy=-0.1850, energy_imag=-0.0088, variance=0.0445, Lz=-1.2536, L_square=2.9183
+step=79, pmove=0.94, energy=-0.1875, energy_imag=+0.0134, variance=0.0498, Lz=-1.2861, L_square=3.2942
+step=80, pmove=0.95, energy=-0.1941, energy_imag=-0.0092, variance=0.0738, Lz=-1.2694, L_square=3.2641
+step=81, pmove=0.95, energy=-0.1888, energy_imag=+0.0404, variance=0.0587, Lz=-1.2645, L_square=3.5549
+step=82, pmove=0.95, energy=-0.1710, energy_imag=-0.0133, variance=0.0581, Lz=-1.1338, L_square=2.8753
+step=83, pmove=0.95, energy=-0.2104, energy_imag=+0.0035, variance=0.0653, Lz=-1.1791, L_square=3.3467
+step=84, pmove=0.94, energy=-0.1991, energy_imag=+0.0162, variance=0.0869, Lz=-1.1062, L_square=2.7632
+step=85, pmove=0.95, energy=-0.1944, energy_imag=-0.0162, variance=0.0269, Lz=-1.0754, L_square=2.4928
+step=86, pmove=0.94, energy=-0.1899, energy_imag=+0.0131, variance=0.0464, Lz=-1.0061, L_square=2.1007
+step=87, pmove=0.94, energy=-0.2073, energy_imag=-0.0229, variance=0.0206, Lz=-1.0639, L_square=2.3160
+step=88, pmove=0.94, energy=-0.1887, energy_imag=+0.0081, variance=0.0409, Lz=-1.0250, L_square=2.0034
+step=89, pmove=0.95, energy=-0.2150, energy_imag=+0.0049, variance=0.0271, Lz=-1.0964, L_square=2.4618
+step=90, pmove=0.94, energy=-0.1941, energy_imag=-0.0001, variance=0.0320, Lz=-1.0643, L_square=2.1528
+step=91, pmove=0.94, energy=-0.2053, energy_imag=-0.0044, variance=0.0265, Lz=-1.0837, L_square=2.3673
+step=92, pmove=0.94, energy=-0.1990, energy_imag=+0.0072, variance=0.0338, Lz=-1.0809, L_square=2.2613
+step=93, pmove=0.95, energy=-0.2074, energy_imag=+0.0032, variance=0.0180, Lz=-0.9993, L_square=1.9165
+step=94, pmove=0.96, energy=-0.1842, energy_imag=+0.0082, variance=0.0248, Lz=-0.9918, L_square=1.8850
+step=95, pmove=0.95, energy=-0.2180, energy_imag=+0.0053, variance=0.0182, Lz=-0.9598, L_square=1.9059
+step=96, pmove=0.95, energy=-0.1955, energy_imag=+0.0136, variance=0.0300, Lz=-0.8914, L_square=1.5990
+step=97, pmove=0.95, energy=-0.2113, energy_imag=-0.0105, variance=0.0173, Lz=-0.8945, L_square=1.6187
+step=98, pmove=0.94, energy=-0.1856, energy_imag=+0.0129, variance=0.0513, Lz=-0.8791, L_square=1.5127
+step=99, pmove=0.95, energy=-0.2137, energy_imag=-0.0145, variance=0.0157, Lz=-0.8998, L_square=1.6555
+Saving checkpoint DeepHall_n1l3_20260305_18:37:02/ckpt_000099.npz
+Time per step: 0.028s

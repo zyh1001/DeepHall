@@ -57,29 +57,32 @@ class Orbitals(nn.Module):
             )
             self.lll_weight = nn.DenseGeneral(int(self.Q + 1), axis=1)
 
-    def __call__(self, h_one, r, theta):
+    def __call__(self, h_one, x, y):
         orbitals = self.featured_orbitals(h_one) # [nspins,Q+1,nspins]
         # Diagnostic: check normalization factors
-      
+        '''
         jax.debug.print(
             "norm_factor finite: {ok}, min: {mn}, max: {mx}",
             ok=jnp.all(jnp.isfinite(self.norm_factor)),
             mn=jnp.min(jnp.nan_to_num(self.norm_factor)),
             mx=jnp.max(jnp.nan_to_num(self.norm_factor)),
         )
-        
+        '''
         if self.type == OrbitalType.sparse:
             orbitals = self.lll_weight(orbitals).transpose((0, 3, 1, 2))
 
         m = jnp.arange(0, int(self.Q + 1))
-        z = r * jnp.exp(1j  * theta)
+        z = x + 1j * y
         z = z[..., None]
-        r_norm = r[..., None]
-        envelope = self.norm_factor * z ** m * jnp.exp(- r_norm**2 / 4)
+        r = jnp.sqrt(x**2 + y**2)
+        r = r[..., None]
+        envelope = self.norm_factor * z ** m * jnp.exp(- r**2 / 4)
+        '''
         jax.debug.print("print shapes in \'Orbitals\'")
         jax.debug.print("shape of original obitals:{shape}", shape = orbitals.shape)
+        '''
         orbitals = jnp.sum(orbitals * envelope[..., None, None], axis=1)
-        
+        '''
         jax.debug.print("shape of h_one:{shape}", shape = h_one.shape)
         jax.debug.print("shape of r:{shape}", shape=r.shape)
         jax.debug.print("shape of m:{shape}", shape=m.shape)
@@ -87,6 +90,7 @@ class Orbitals(nn.Module):
         jax.debug.print("shape of r_norm:{shape}", shape=r_norm.shape)
         jax.debug.print("shape of envelope:{shape}", shape = envelope.shape)
         jax.debug.print("shape of modified obitals:{shape}", shape = orbitals.shape)
+        '''
         return jnp.moveaxis(orbitals, -1, 0)  # Move ndets dim to the front
 
 
@@ -125,23 +129,20 @@ class Jastrow(nn.Module):
             jastrow_ee_anti = jnp.asarray(0.0)
 
         total_jastrow = jastrow_ee_anti + jastrow_ee_par
+        '''
         jax.debug.print(
             "jastrow finite: {ok}, jastrow_total: {v}",
             ok=jnp.all(jnp.isfinite(total_jastrow)),
             v=jnp.nan_to_num(total_jastrow),
         )
-
+        '''
 
         return total_jastrow
 
     def calculated_r_ee(self, electrons: jnp.ndarray) -> jnp.ndarray:
 
-        r = electrons[..., 0]
-        theta = electrons[..., 1]
-
-        # polar -> cartesian
-        x = r * jnp.cos(theta)
-        y = r * jnp.sin(theta)
+        x = electrons[..., 0]
+        y = electrons[..., 1]
 
         cart_e = jnp.stack([x, y], axis=-1)
 

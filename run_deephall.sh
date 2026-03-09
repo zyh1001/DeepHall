@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J kfac_debug
+#SBATCH -J 6spins_disk
 #SBATCH -N 1
 #SBATCH -n 3
 #SBATCH --ntasks-per-node=3
@@ -16,4 +16,4 @@ source /data/home/zyh/miniconda3/etc/profile.d/conda.sh
 conda activate deephall
 
 # 运行 DeepHall 测试
-deephall 'system.nspins=[1,0]' system.flux=3 batch_size=8 optim.optimizer=adam optim.iterations=25 system.d=0.1
+deephall 'system.nspins=[6,0]' system.flux=18 batch_size=512 optim.optimizer=kfac optim.iterations=100000 system.d=0.1

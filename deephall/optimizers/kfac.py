@@ -47,7 +47,7 @@ class RepeatedDenseBlock(kfac_jax.DenseTwoKroneckerFactored):
         parameters_shaped_list: Sequence[kfac_jax.utils.Array],
     ) -> kfac_jax.utils.Array:
         for p, s in zip(parameters_shaped_list, self.parameters_shapes):
-            assert p.shape == s
+            assert p.shape == s, f"{p.shape} != {s}"
 
         if self.has_bias:
             w, b = parameters_shaped_list

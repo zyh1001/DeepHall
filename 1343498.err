@@ -1,0 +1,108 @@
++ git_commit: dad8181
++ batch_size: 512
++ seed: 1772800982
++ system:
++   flux: 18
++   radius: null
++   d: 0.1
++   nspins:
++   - 6
++   - 0
++   interaction_strength: 1.0
++   lz_center: 0.0
++   lz_penalty: 0.0
++   l2_penalty: 0.0
++   interaction_type: coulomb
++ network:
++   type: psiformer
++   orbital: full
++   psiformer:
++     num_heads: 4
++     heads_dim: 64
++     num_layers: 2
++     determinants: 1
++ mcmc:
++   steps: 10
++   width: 0.1
++   burn_in: 200
++   adapt_frequency: 100
++ optim:
++   iterations: 100000
++   optimizer: kfac
++   adam:
++     lr:
++       rate: 0.005
++       decay: 1.0
++       delay: 2000.0
++   kfac:
++     lr:
++       rate: 0.005
++       decay: 1.0
++       delay: 2000.0
++ log:
++   save_path: null
++   restore_path: null
++   save_time_interval: 600
++   save_step_interval: 1000
++   initial_energy: true
+E0306 20:43:03.752874 1567026 hlo_lexer.cc:443] Failed to parse int literal: 52104715567538635083
+INFO:absl:==================================================
+INFO:absl:Graph parameter registrations:
+INFO:absl:{'params': {'Jastrow_0': {'ee_anti': 'Auto[scale_and_shift_tag_1]',
+                          'ee_par': 'Auto[scale_and_shift_tag_0]'},
+            'Orbitals_0': {'featured_orbitals': {'DenseGeneral_0': {'bias': 'Auto[repeated_dense_13]',
+                                                                    'kernel': 'Auto[repeated_dense_13]'},
+                                                 'DenseGeneral_1': {'bias': 'Auto[repeated_dense_14]',
+                                                                    'kernel': 'Auto[repeated_dense_14]'}}},
+            'PsiformerLayers_0': {'Dense_0': {'kernel': 'Auto[repeated_dense_0]'},
+                                  'Dense_1': {'kernel': 'Auto[repeated_dense_5]'},
+                                  'Dense_2': {'bias': 'Auto[repeated_dense_6]',
+                                              'kernel': 'Auto[repeated_dense_6]'},
+                                  'Dense_3': {'kernel': 'Auto[repeated_dense_11]'},
+                                  'Dense_4': {'bias': 'Auto[repeated_dense_12]',
+                                              'kernel': 'Auto[repeated_dense_12]'},
+                                  'LayerNorm_0': {'bias': 'Orphan',
+                                                  'scale': 'Orphan'},
+                                  'LayerNorm_1': {'bias': 'Orphan',
+                                                  'scale': 'Orphan'},
+                                  'LayerNorm_2': {'bias': 'Orphan',
+                                                  'scale': 'Orphan'},
+                                  'LayerNorm_3': {'bias': 'Orphan',
+                                                  'scale': 'Orphan'},
+                                  'MultiHeadAttention_0': {'key': {'bias': 'Auto[repeated_dense_2]',
+                                                                   'kernel': 'Auto[repeated_dense_2]'},
+                                                           'out': {'bias': 'Auto[repeated_dense_4]',
+                                                                   'kernel': 'Auto[repeated_dense_4]'},
+                                                           'query': {'bias': 'Auto[repeated_dense_1]',
+                                                                     'kernel': 'Auto[repeated_dense_1]'},
+                                                           'value': {'bias': 'Auto[repeated_dense_3]',
+                                                                     'kernel': 'Auto[repeated_dense_3]'}},
+                                  'MultiHeadAttention_1': {'key': {'bias': 'Auto[repeated_dense_8]',
+                                                                   'kernel': 'Auto[repeated_dense_8]'},
+                                                           'out': {'bias': 'Auto[repeated_dense_10]',
+                                                                   'kernel': 'Auto[repeated_dense_10]'},
+                                                           'query': {'bias': 'Auto[repeated_dense_7]',
+                                                                     'kernel': 'Auto[repeated_dense_7]'},
+                                                           'value': {'bias': 'Auto[repeated_dense_9]',
+                                                                     'kernel': 'Auto[repeated_dense_9]'}}}}}
+INFO:absl:==================================================
+Start VMC with 4 JAX devices
+E0306 20:43:11.350590 1567104 pjrt_stream_executor_client.cc:3084] Execution of replica 0 failed: INTERNAL: external/xla/xla/service/gpu/runtime/nccl_api.cc:370: NCCL operation ncclGetUniqueId(&id) failed: Unable to load NCCL library. Multi-GPU collectives will not work.. Last NCCL warning(error) log entry (may be unrelated) 'Unable to load NCCL library. Multi-GPU collectives will not work.'.
+E0306 20:43:11.350599 1567113 pjrt_stream_executor_client.cc:3084] Execution of replica 3 failed: INTERNAL: external/xla/xla/service/gpu/runtime/nccl_api.cc:370: NCCL operation ncclGetUniqueId(&id) failed: Unable to load NCCL library. Multi-GPU collectives will not work.. Last NCCL warning(error) log entry (may be unrelated) 'Unable to load NCCL library. Multi-GPU collectives will not work.'.
+E0306 20:43:11.350595 1567107 pjrt_stream_executor_client.cc:3084] Execution of replica 1 failed: INTERNAL: external/xla/xla/service/gpu/runtime/nccl_api.cc:370: NCCL operation ncclGetUniqueId(&id) failed: Unable to load NCCL library. Multi-GPU collectives will not work.. Last NCCL warning(error) log entry (may be unrelated) 'Unable to load NCCL library. Multi-GPU collectives will not work.'.
+E0306 20:43:11.350606 1567110 pjrt_stream_executor_client.cc:3084] Execution of replica 2 failed: INTERNAL: external/xla/xla/service/gpu/runtime/nccl_api.cc:370: NCCL operation ncclGetUniqueId(&id) failed: Unable to load NCCL library. Multi-GPU collectives will not work.. Last NCCL warning(error) log entry (may be unrelated) 'Unable to load NCCL library. Multi-GPU collectives will not work.'.
+Traceback (most recent call last):
+  File "/data/home/zyh/miniconda3/envs/deephall/bin/deephall", line 7, in <module>
+    sys.exit(cli())
+             ^^^^^
+  File "/data/home/zyh/DeepHall/deephall/train.py", line 236, in cli
+    train(Config.from_dict(config))
+  File "/data/home/zyh/DeepHall/deephall/train.py", line 157, in train
+    for step, state, stats, pmove in train_loop(cfg, log_manager):
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/DeepHall/deephall/train.py", line 118, in train_loop
+    data, pmove = pmap_mcmc_step(params, data, subkey, mcmc_width)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jaxlib.xla_extension.XlaRuntimeError: INTERNAL: external/xla/xla/service/gpu/runtime/nccl_api.cc:370: NCCL operation ncclGetUniqueId(&id) failed: Unable to load NCCL library. Multi-GPU collectives will not work.. Last NCCL warning(error) log entry (may be unrelated) 'Unable to load NCCL library. Multi-GPU collectives will not work.'.: while running replica 0 and partition 0 of a replicated computation (other replicas may have failed as well).
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.

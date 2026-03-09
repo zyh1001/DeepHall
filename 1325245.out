@@ -1,5 +1,0 @@
-shape of init_guess(Array(8, dtype=int32, weak_type=True), Array(1, dtype=int32, weak_type=True), Array(2, dtype=int32, weak_type=True))
-shape of original h_one: (Array(1, dtype=int32, weak_type=True), Array(3, dtype=int32, weak_type=True))
-shape of h_one: (Array(1, dtype=int32, weak_type=True), Array(256, dtype=int32, weak_type=True))
-Entering jdb:
-(jdb) 

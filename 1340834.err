@@ -1,0 +1,111 @@
++ git_commit: dad8181
++ batch_size: 256
++ seed: 1772766234
++ system:
++   flux: 18
++   radius: null
++   d: 0.1
++   nspins:
++   - 6
++   - 0
++   interaction_strength: 1.0
++   lz_center: 0.0
++   lz_penalty: 0.0
++   l2_penalty: 0.0
++   interaction_type: coulomb
++ network:
++   type: psiformer
++   orbital: full
++   psiformer:
++     num_heads: 4
++     heads_dim: 64
++     num_layers: 2
++     determinants: 1
++ mcmc:
++   steps: 10
++   width: 0.1
++   burn_in: 200
++   adapt_frequency: 100
++ optim:
++   iterations: 10000
++   optimizer: kfac
++   adam:
++     lr:
++       rate: 0.005
++       decay: 1.0
++       delay: 2000.0
++   kfac:
++     lr:
++       rate: 0.05
++       decay: 1.0
++       delay: 2000.0
++ log:
++   save_path: null
++   restore_path: null
++   save_time_interval: 600
++   save_step_interval: 1000
++   initial_energy: true
+Traceback (most recent call last):
+  File "/data/home/zyh/miniconda3/envs/deephall/bin/deephall", line 7, in <module>
+    sys.exit(cli())
+             ^^^^^
+  File "/data/home/zyh/DeepHall/deephall/train.py", line 236, in cli
+    train(Config.from_dict(config))
+  File "/data/home/zyh/DeepHall/deephall/train.py", line 157, in train
+    for step, state, stats, pmove in train_loop(cfg, log_manager):
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/DeepHall/deephall/train.py", line 111, in train_loop
+    opt_state = opt_init(params, subkey, data)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/DeepHall/deephall/optimizers/kfac.py", line 224, in init
+    return optimizer.init(params, key, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/kfac_jax/_src/optimizer.py", line 1018, in init
+    return self._init(params, rng, batch, func_state)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/kfac_jax/_src/utils/staging.py", line 248, in decorated
+    outs = func(instance, *args)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/kfac_jax/_src/optimizer.py", line 986, in _init
+    estimator_state=self.estimator.init(
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/kfac_jax/_src/utils/misc.py", line 286, in wrapped
+    return method(instance, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/kfac_jax/_src/curvature_estimator.py", line 1183, in init
+    self.finalize(func_args)
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/kfac_jax/_src/utils/misc.py", line 259, in finalize
+    self._finalize(*args, **kwargs)
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/kfac_jax/_src/curvature_estimator.py", line 1169, in _finalize
+    self._jaxpr = self._vjp(func_args, return_only_jaxpr=True)  # pytype: disable=annotation-type-mismatch  # always-use-return-annotations
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/kfac_jax/_src/tracer.py", line 354, in wrapped_transformation
+    jaxpr = ProcessedJaxpr.make_from_func(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/kfac_jax/_src/tracer.py", line 244, in make_from_func
+    func = tgm.auto_register_tags(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/kfac_jax/_src/tag_graph_matcher.py", line 1567, in auto_register_tags
+    graph = make_jax_graph(
+            ^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/kfac_jax/_src/tag_graph_matcher.py", line 345, in make_jax_graph
+    closed_jaxpr, out_shapes = jax.make_jaxpr(func, return_shape=True)(*func_args)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/miniconda3/envs/deephall/lib/python3.12/site-packages/kfac_jax/_src/optimizer.py", line 1568, in value_func
+    out, _ = value_and_grad_func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/DeepHall/deephall/optimizers/kfac.py", line 199, in val_and_grad
+    stats, grads = loss_grad_fn(params, data)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/DeepHall/deephall/loss.py", line 79, in loss_and_grad
+    el, other_observables = batch_local_energy(params, data)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/DeepHall/deephall/hamiltonian.py", line 305, in _e_l
+    kinetic, angular_momenta = ke(params, data)
+                               ^^^^^^^^^^^^^^^^
+  File "/data/home/zyh/DeepHall/deephall/hamiltonian.py", line 255, in _lapl_over_f
+    angular_momentum_z=angular_momentum_z.real,
+                       ^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'tuple' object has no attribute 'real'
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.

@@ -37,14 +37,14 @@ class PsiformerLayers(nn.Module):
 
     @nn.compact
     def __call__(self, electrons: jnp.ndarray, spins: jnp.ndarray):
-        r, theta = electrons[..., 0], electrons[..., 1]
-        h_one = self.input_feature(r, theta, spins)
-        jax.debug.print("shape of original h_one: {shape}", shape = h_one.shape)
+        x, y = electrons[..., 0], electrons[..., 1]
+        h_one = self.input_feature(x, y, spins)
+        # jax.debug.print("shape of original h_one: {shape}", shape = h_one.shape)
         attention_dim = self.num_heads * self.heads_dim
         h_one = nn.Dense(attention_dim, use_bias=False)(h_one)
         
         for _ in range(self.num_layers):
-            jax.debug.print("shape of h_one: {shape}", shape = h_one.shape)
+            # jax.debug.print("shape of h_one: {shape}", shape = h_one.shape)
             # jax.debug.breakpoint()
             
             attn_out = nn.MultiHeadAttention(num_heads=self.num_heads)(h_one)
@@ -55,12 +55,12 @@ class PsiformerLayers(nn.Module):
         return h_one
 
 # FIXME
-    def input_feature(self, r: jnp.ndarray, theta: jnp.ndarray, spins: jnp.ndarray):
+    def input_feature(self, x: jnp.ndarray, y: jnp.ndarray, spins: jnp.ndarray):
        
         return jnp.stack(
             [
-                jnp.cos(theta) * r,
-                jnp.sin(theta) * r,
+                x,
+                y,
                 spins,
             ],
             axis=-1,
@@ -79,15 +79,16 @@ class Psiformer(nn.Module):
     def __call__(self, electrons):
         orbitals = self.orbitals(electrons)
         # Diagnostic: check orbitals for NaN/Inf before slogdet
-
+        '''
         jax.debug.print(
             "orbitals finite: {ok}, orbitals_min_re: {minre}, orbitals_max_re: {maxre}",
             ok=jnp.all(jnp.isfinite(orbitals)),
             minre=jnp.min(jnp.nan_to_num(jnp.real(orbitals))),
             maxre=jnp.max(jnp.nan_to_num(jnp.real(orbitals))),
         )
-
+        '''
         signs, logdets = jnp.linalg.slogdet(orbitals)
+        '''
         jax.debug.print("shape of logdets:{shape}", shape = logdets.shape)
         jax.debug.print(
             "logdets finite: {ok}, logdets_min: {minv}, logdets_max: {maxv}",
@@ -95,16 +96,16 @@ class Psiformer(nn.Module):
             minv=jnp.min(jnp.nan_to_num(logdets)),
             maxv=jnp.max(jnp.nan_to_num(logdets)),
         )
-
+        '''
         logmax = jnp.max(logdets)  # logsumexp trick
         result  = jnp.log(jnp.sum(signs * jnp.exp(logdets - logmax))) + logmax
-        jax.debug.print("f(x)=:{result}", result=result)
-        return jnp.log(jnp.sum(signs * jnp.exp(logdets - logmax))) + logmax
+        # jax.debug.print("f(x)=:{result}", result=result)
+        return result
 
     # FIXME
     @nn.compact
     def orbitals(self, electrons):
-        r, theta = electrons[..., 0], electrons[..., 1]
+        x, y = electrons[..., 0], electrons[..., 1]
         spins = jnp.array([1] * self.nspins[0] + [-1] * self.nspins[1])
         h_one = PsiformerLayers(
             num_heads=self.num_heads,
@@ -113,13 +114,14 @@ class Psiformer(nn.Module):
         )(electrons, spins)
         orbitals = Orbitals(
             type=self.orbital_type, Q=self.Q, nspins=self.nspins, ndets=self.ndets
-        )(h_one, r, theta)
+        )(h_one, x, y)
         jastrow = Jastrow(self.nspins)(electrons)
 
+        '''
         jax.debug.print(
             "jastrow finite: {ok}, jastrow_val: {v}",
             ok=jnp.all(jnp.isfinite(jastrow)),
             v=jnp.nan_to_num(jastrow),
         )
-
+        '''
         return jnp.exp(jastrow / sum(self.nspins)) * orbitals

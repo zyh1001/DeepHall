@@ -82,11 +82,7 @@ def disk_sampling(key: PRNGKey, x1: jnp.ndarray, stddev: float) -> jnp.ndarray:
     Returns:
         New electron configuration.
     """
-    r, theta = x1[..., 0], x1[..., 1]
-
-    # polar -> cartesian
-    x = r * jnp.cos(theta)
-    y = r * jnp.sin(theta)
+    x, y = x1[..., 0], x1[..., 1]
 
     key_dx, key_dy = jax.random.split(key)
 
@@ -96,12 +92,7 @@ def disk_sampling(key: PRNGKey, x1: jnp.ndarray, stddev: float) -> jnp.ndarray:
     x_new = x + dx
     y_new = y + dy
 
-    # cartesian -> polar
-    r_new = jnp.sqrt(x_new**2 + y_new**2)
-    r_new = jnp.maximum(r_new, 1e-8)  # 防止 r_new 为 0 或 NaN
-    theta_new = jnp.arctan2(y_new, x_new)
-
-    return jnp.stack([r_new, theta_new], axis=-1)
+    return jnp.stack([x_new, y_new], axis=-1)
 
 
 def sph_sampling(key: PRNGKey, x1: jnp.ndarray, stddev: float) -> jnp.ndarray:
