@@ -56,7 +56,9 @@ def make_conf_potential(Q: float, a: jnp.ndarray, d: jnp.ndarray, r_grid, Vc_tab
     """
     def conf(data):
         # 提取径向坐标 r
-        r = data[..., 0]  # 形状 (..., nelec)
+        x = data[..., 0]  # 形状 (..., nelec)
+        y = data[..., 1]
+        r = jnp.sqrt(x**2 + y**2)
         # 插值计算 r<a*15 区域的势能
         V_small = jnp.interp(r, r_grid, Vc_table)  
         # r>=15a 时近似为点电荷势

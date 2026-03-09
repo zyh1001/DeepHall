@@ -181,7 +181,7 @@ class OptimizerAdam:
 
 @dataclass
 class OptimizerKfac:
-    lr: LearningRate = field(default_factory=lambda: LearningRate(rate=0.005))
+    lr: LearningRate = field(default_factory=lambda: LearningRate(rate=0.01))
 
 
 @dataclass
