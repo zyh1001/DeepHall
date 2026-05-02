@@ -25,7 +25,7 @@ from flax import linen as nn
 from jax import numpy as jnp
 import jax
 
-from deephall.config import OrbitalType
+from deephall.config import OrbitalType, EnvelopeType
 
 from .blocks import Jastrow, Orbitals
 
@@ -56,7 +56,8 @@ class PsiformerLayers(nn.Module):
 
 # FIXME
     def input_feature(self, x: jnp.ndarray, y: jnp.ndarray, spins: jnp.ndarray):
-       
+
+        # spins = jnp.broadcast_to(spins, x.shape)
         return jnp.stack(
             [
                 x,
@@ -75,7 +76,7 @@ class Psiformer(nn.Module):
     heads_dim: int
     num_layers: int
     orbital_type: OrbitalType
-
+    envelope_type: EnvelopeType
     def __call__(self, electrons):
         orbitals = self.orbitals(electrons)
         # Diagnostic: check orbitals for NaN/Inf before slogdet
@@ -113,7 +114,7 @@ class Psiformer(nn.Module):
             heads_dim=self.heads_dim,
         )(electrons, spins)
         orbitals = Orbitals(
-            type=self.orbital_type, Q=self.Q, nspins=self.nspins, ndets=self.ndets
+            type=self.orbital_type, Q=self.Q, nspins=self.nspins, ndets=self.ndets, envelope_type=self.envelope_type
         )(h_one, x, y)
         jastrow = Jastrow(self.nspins)(electrons)
 

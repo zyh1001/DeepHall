@@ -45,7 +45,7 @@ class PairCorrelationEstimator(Estimator[HallSystem]):
         del i, params, aux_data, key, system
         data = jnp.reshape(data, (-1, *data.shape[-2:]))
         batch_size, nelec, _ = data.shape
-        theta, phi = data[..., 0], data[..., 1]
+        x, y = data[..., 0], data[..., 1]
         xyz_data = jnp.stack(
             [sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta)], axis=-1
         )

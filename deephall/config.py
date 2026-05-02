@@ -119,6 +119,11 @@ class OrbitalType(StrEnum):
     full = "full"
     sparse = "sparse"
 
+class EnvelopeType(StrEnum):
+    no_m_learnable = "no_m_learnable"
+    no_m_fixed = "no_m_fixed"
+    m_learnable = "m_learnable"
+    m_fixed = "m_fixed"
 
 @dataclass
 class PsiformerNetwork:
@@ -126,7 +131,7 @@ class PsiformerNetwork:
     heads_dim: int = 64
     num_layers: int = 2
     determinants: int = 1
-
+    envelope: EnvelopeType = EnvelopeType.no_m_learnable
 
 @dataclass
 class Network:
@@ -160,9 +165,9 @@ class LearningRate:
     The formula is rate * (1.0 / (1.0 + (t / delay)) ** decay
     """
 
-    rate: float = 0.005
+    rate: float = 0.05
     decay: float = 1.0
-    delay: float = 2000.0
+    delay: float = 200000.0
 
     def schedule(self, t):
         return self.rate * (1.0 / (1.0 + (t / self.delay))) ** self.decay
@@ -181,7 +186,7 @@ class OptimizerAdam:
 
 @dataclass
 class OptimizerKfac:
-    lr: LearningRate = field(default_factory=lambda: LearningRate(rate=0.01))
+    lr: LearningRate = field(default_factory=lambda: LearningRate(rate=0.05))
 
 
 @dataclass
@@ -231,6 +236,7 @@ class Log:
 
 @dataclass
 class Config:
+    git_commit: str = ""   # <--- 新增这一行
     batch_size: int = 3360  # 32*3*5*7
     seed: int = field(default_factory=lambda: int(time.time()))
     system: System = field(default_factory=System)

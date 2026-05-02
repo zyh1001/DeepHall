@@ -95,7 +95,7 @@ def make_loss_fn(
                 - 2 * system.lz_center * (lz - clipped_lz)
             )
         if system.l2_penalty:
-            l2 = other_observables["angular_momentum_square"]
+            l2 = other_observables["angular_momentum_z_square"]
             clipped_l2 = constants.pmean(jnp.nanmean(iqr_clip(l2)))
             diff_to_clip += system.l2_penalty * (l2 - clipped_l2)
         diff = iqr_clip(diff_to_clip)

@@ -112,6 +112,43 @@ def make_ee_potential(
     
     return potential
 
+def make_potential(
+    interaction_type: InteractionType, Q: float,
+    a: jnp.ndarray, d: jnp.ndarray, 
+    r_grid, Vc_table, N_spin
+) -> Callable[[jnp.ndarray], jnp.ndarray]:
+    """Create potential energy function with a given type and geometry."""
+    if interaction_type == InteractionType.coulomb:
+        potential_function = partial(coulomb_potential, Q=Q)
+    if interaction_type == InteractionType.harmonic:
+        potential_function = partial(harmonic_potential, Q=Q)
+
+    def potential(data: jnp.ndarray) -> jnp.ndarray:
+        x = data[..., 0]
+        y = data[..., 1]
+
+        cart_e = jnp.stack([x, y], axis=-1)
+
+        cart_ee = cart_e[None] - cart_e[:, None]
+        eye = jnp.eye(cart_ee.shape[0])
+        r_ee = jnp.linalg.norm(cart_ee + eye[..., None], axis=-1) * (1.0 - eye)
+        
+    
+        # 提取径向坐标 r
+        r = jnp.sqrt(x**2+y**2)  # 形状 (..., nelec)
+        # 插值计算 r<a*15 区域的势能
+        V_small = jnp.interp(r, r_grid, Vc_table)  
+        # r>=15a 时近似为点电荷势
+        V_large = -N_spin / jnp.sqrt(d**2 + r**2)
+        # 根据条件选择势能
+        V_vals = jnp.where(r < 15*a, V_small, V_large)
+        # 对所有电子求和（axis=-1对最后一个维度求和）
+        ee = potential_function(r_ee)
+        conf = jnp.sum(V_vals, axis=-1)
+        return ee+conf  # 返回总势能
+    
+    return potential
+
 
 def make_local_kinetic_energy(f: LogPsiNetwork, Q: float, a: jnp.ndarray):
     r"""Creates a function to for the local kinetic energy.
@@ -153,33 +190,30 @@ def make_local_kinetic_energy(f: LogPsiNetwork, Q: float, a: jnp.ndarray):
         '''
         try:
             logpsi_val = f(params, data)
-            jax.debug.print("logpsi finite: {ok}, logpsi_re_sum: {re}, logpsi_im_sum: {im}",
+            jax.debug.print("logpsi finite: {ok}, logpsi_re: {re}, logpsi_im: {im}",
                             ok=jnp.all(jnp.isfinite(logpsi_val)),
-                            re=jnp.sum(jnp.nan_to_num(jnp.real(logpsi_val))),
-                            im=jnp.sum(jnp.nan_to_num(jnp.imag(logpsi_val))))
+                            re=jnp.real(logpsi_val),
+                            im=jnp.imag(logpsi_val))
         except Exception:
             jax.debug.print("logpsi evaluation failed")
         '''
+
+
         grad_x = grad_real[..., 0] + 1j * grad_imag[..., 0]
         grad_y = grad_real[..., 1] + 1j * grad_imag[..., 1]
         '''
-        jax.debug.print("grad_real finite: {g}, grad_imag finite: {h}",
-                g=jnp.all(jnp.isfinite(grad_real)),
-                h=jnp.all(jnp.isfinite(grad_imag)))
         # More detailed diagnostics for grad components
         jax.debug.print(
-            "grad_r finite:{ok}, nan_count:{n}, min_re:{minr}, max_re:{maxr}",
-            ok=jnp.all(jnp.isfinite(grad_r)),
-            n=jnp.sum(jnp.isnan(grad_r)),
-            minr=jnp.min(jnp.nan_to_num(jnp.real(grad_r))),
-            maxr=jnp.max(jnp.nan_to_num(jnp.real(grad_r))),
+            "grad_x finite:{ok}, nan_count:{n}, val:{val}",
+            ok=jnp.all(jnp.isfinite(grad_x)),
+            n=jnp.sum(jnp.isnan(grad_x)),
+            val=grad_x
         )
         jax.debug.print(
-            "grad_theta finite:{ok}, nan_count:{n}, min_re:{minr}, max_re:{maxr}",
-            ok=jnp.all(jnp.isfinite(grad_theta)),
-            n=jnp.sum(jnp.isnan(grad_theta)),
-            minr=jnp.min(jnp.nan_to_num(jnp.real(grad_theta))),
-            maxr=jnp.max(jnp.nan_to_num(jnp.real(grad_theta))),
+            "grad_y finite:{ok}, nan_count:{n}, val:{val}",
+            ok=jnp.all(jnp.isfinite(grad_y)),
+            n=jnp.sum(jnp.isnan(grad_y)),
+            val=grad_y
         )
         '''
         # $(\nabla \log \psi) \cdot (\nabla \log \psi)$ on a sphere
@@ -188,15 +222,13 @@ def make_local_kinetic_energy(f: LogPsiNetwork, Q: float, a: jnp.ndarray):
         hess_real = jax.hessian(lambda p, x: f(p, x).real, argnums=1)(params, data)
         hess_imag = jax.hessian(lambda p, x: f(p, x).imag, argnums=1)(params, data)
         hess_logpsi = hess_real + 1j * hess_imag
+        
         '''
-        jax.debug.print("hess_real finite: {a}, hess_imag finite: {b}",
-                a=jnp.all(jnp.isfinite(hess_real)),
-                b=jnp.all(jnp.isfinite(hess_imag)))
         # Diagnostics for Hessian: count NaNs and report small stats
         jax.debug.print(
-            "hess_real nan_count:{nr}, hess_imag nan_count:{ni}",
-            nr=jnp.sum(jnp.isnan(hess_real)),
-            ni=jnp.sum(jnp.isnan(hess_imag)),
+            "hess_real:{nr}, hess_imag:{ni}",
+            nr=hess_real,
+            ni=hess_imag,
         )
         '''
         #        +----------------------------------------------------------+
@@ -208,10 +240,10 @@ def make_local_kinetic_energy(f: LogPsiNetwork, Q: float, a: jnp.ndarray):
             jnp.diagonal(hess_logpsi[:, 0, :, 0])
             + jnp.diagonal(hess_logpsi[:, 1, :, 1])
         )
-        # jax.debug.print("grad_grad_logpsi finite:{ok}, value:{v}", ok=jnp.isfinite(grad_grad_logpsi), v=jnp.nan_to_num(grad_grad_logpsi))
+        # jax.debug.print("grad_grad_logpsi finite:{ok}, value:{v}", ok=jnp.isfinite(grad_grad_logpsi), v=grad_grad_logpsi)
         # See section 3.10.3 of "Composite Fermions"
         magnetic_contribution = jnp.sum(
-            2j*Q*y*grad_x / a**2  - 2j*Q*x*grad_y / a**2 + Q**2 * r_square / a**4
+            1j*y*grad_x - 1j*x*grad_y + r_square / 4
         )
         # jax.debug.print("magnetic_contribution finite:{ok}, val:{v}", ok=jnp.all(jnp.isfinite(magnetic_contribution)), v=jnp.nan_to_num(magnetic_contribution))
         sum_kinetic_momentum_square = (
@@ -221,17 +253,14 @@ def make_local_kinetic_energy(f: LogPsiNetwork, Q: float, a: jnp.ndarray):
         jax.debug.print(
             "square_grad_logpsi finite:{ok}, val:{v}", ok=jnp.all(jnp.isfinite(square_grad_logpsi)), v=jnp.nan_to_num(square_grad_logpsi)
         )
-        jax.debug.print(
-            "sum_kinetic_momentum_square finite:{ok}, val:{v}", ok=jnp.all(jnp.isfinite(sum_kinetic_momentum_square)), v=jnp.nan_to_num(sum_kinetic_momentum_square)
-        )
         '''
         kinetic_energy = sum_kinetic_momentum_square / 2
         # Debug: print kinetic stats
         '''
-        jax.debug.print("kinetic finite: {ok}, kin_min: {mn}, kin_max: {mx}",
+        jax.debug.print("kinetic finite: {ok}, val: {val}",
                 ok=jnp.all(jnp.isfinite(kinetic_energy)),
-                mn=jnp.min(jnp.real(kinetic_energy)),
-                mx=jnp.max(jnp.real(kinetic_energy)))
+                val=jnp.real(kinetic_energy)
+        )
         '''
         #        +----------------------------------------------------------+
         #        |        Calculating angular momentum square (L^2)         |
@@ -239,24 +268,39 @@ def make_local_kinetic_energy(f: LogPsiNetwork, Q: float, a: jnp.ndarray):
 
 
         # Note that theta_hat_prime alrealdy has a 1/sin factor
-        magnetic_term = r_square**2 * Q**2/ a**4 + 2j*r_square*Q*(-x*grad_y + y*grad_x) / a**2
+        # magnetic_term = r_square**2 * Q**2/ a**4 + 2j*r_square*Q*(-x*grad_y + y*grad_x) / a**2
         grad_grad_x_psi  = grad_x**2 + jnp.diagonal(hess_logpsi[:, 0, :, 0])
         grad_grad_y_psi = grad_y**2 + jnp.diagonal(hess_logpsi[:, 1, :, 1])
         grad_grad_x_y_psi = jnp.diagonal(hess_logpsi[:, 0, :, 1]) + grad_x * grad_y
         # We first assume everything commutes, and add back extra terms at the end
         angular_momentum_square = jnp.sum(
-            magnetic_term - x**2 * grad_grad_y_psi - y**2 * grad_grad_x_psi
+             - x**2 * grad_grad_y_psi - y**2 * grad_grad_x_psi
               + x * grad_x + y * grad_y + 2*x*y*grad_grad_x_y_psi 
         )
-
+# 总 Lz^2 的局部值
+# 利用关系: (L^2 psi)/psi = div(L psi)/psi ... 或者直接展开
+# 对于 Lz 是对易的，最简单的方法是计算局部算符的平方项和导数项
+# 但更稳健的方法是利用总算符：
+# Lz_total_sq_local = (Lz_total_local)^2 + sum_i (-i(x_i d/dy_i - y_i d/dx_i) lz_local_each_i)
+# 考虑到代码实现的复杂性，如果波函数是 Lz 的本征态，
+# 那么 (Lz_total_local)^2 应该已经等于 Lz_total_square 的局部值。
         #        +----------------------------------------------------------+
         #        |                     Assemble outputs                     |
         #        +----------------------------------------------------------+
-        angular_momentum_z=jnp.sum(x * grad_y.imag - y * grad_x.imag + (x**2+y**2) * Q / a**2)
+        # total Lz = -i D, where D = sum (x_i d/dy_i - y_i d/dx_i)
+        D_f = jnp.sum(x * grad_y - y * grad_x)
+        term1 = jnp.sum(jnp.outer(x, x) * hess_logpsi[:, 1, :, 1])
+        term2 = - jnp.sum(jnp.outer(x, y) * hess_logpsi[:, 1, :, 0])
+        term3 = - jnp.sum(jnp.outer(y, x) * hess_logpsi[:, 0, :, 1])
+        term4 = jnp.sum(jnp.outer(y, y) * hess_logpsi[:, 0, :, 0])
+        term5 = - jnp.sum(x * grad_x + y * grad_y)
+        D2_f = term1 + term2 + term3 + term4 + term5
+        angular_momentum_z_square = - (D_f**2 + D2_f)
+        
+        angular_momentum_z=jnp.sum(x * grad_y.imag - y * grad_x.imag)
         other_observables = AngularMomenta(
             angular_momentum_z=angular_momentum_z.real,
-            angular_momentum_z_square=(angular_momentum_z.real)**2,
-            angular_momentum_square=angular_momentum_square.real,
+            angular_momentum_z_square=angular_momentum_z_square.real,
         )
         return kinetic_energy, other_observables
 
@@ -301,7 +345,8 @@ def local_energy(f: LogPsiNetwork, system: System) -> LocalEnergy:
         # FIXME
         ee_potential = pe(data) * system.interaction_strength
         # jax.debug.print("ee_potential:{}", ee_potential)
-        conf_potential = pc(data)
+        #FIXME
+        conf_potential = pc(data) * system.interaction_strength
         # jax.debug.print("conf_potential:{}", conf_potential )
         potential = ee_potential + conf_potential
         kinetic, angular_momenta = ke(params, data)

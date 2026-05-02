@@ -165,7 +165,6 @@ def train(cfg: Config):
                 variance=f"{stats['variance'][0]:.4f}",
                 Lz=f"{stats['angular_momentum_z'][0]:+.4f}",
                 Lz_square=f"{stats['angular_momentum_z_square'][0]:.4f}",
-                L_square=f"{stats['angular_momentum_square'][0]:.4f}",
             )
 
             current_time = time.time()

@@ -26,21 +26,22 @@ class DensityEstimator(Estimator[HallSystem]):
 
     def __init__(self, adaptor, system, estimator_options, observable_options):
         super().__init__(adaptor, system, estimator_options, observable_options)
-        self.hist_bins = self.options.get("bins", 50)
-
+        self.hist_bins = self.options.get("bins", 100)
+    
     def empty_val_state(
         self, steps: int
     ) -> tuple[dict[str, jnp.ndarray], dict[str, Any]]:
         del steps
         return {}, {"map": jnp.zeros(self.hist_bins)}
-
+    # FIXME 绘制二维图像
     def evaluate(
         self, i, params, key, data, system, state, aux_data
     ) -> tuple[dict[str, jnp.ndarray], dict[str, Any]]:
         del i, params, system, aux_data, key
-        theta = jnp.reshape(data[..., 0], (-1, 1))
-        hist_range = [(0.0, jnp.pi)]
-        state["map"] += jnp.histogramdd(theta, self.hist_bins, hist_range)[0]
+        points = data.reshape(-1, 2)
+
+        hist_range = [None, None]
+        state["map"] += jnp.histogramdd(points, self.hist_bins, hist_range)[0]
         return {}, state
 
     def digest(self, all_values, state) -> dict[str, jnp.ndarray]:

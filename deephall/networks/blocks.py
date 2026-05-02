@@ -18,7 +18,7 @@ from jax import numpy as jnp
 import jax
 from scipy import special as ss
 
-from deephall.config import OrbitalType
+from deephall.config import OrbitalType, EnvelopeType
 
 # NO CHANGE
 class FeaturedOrbitals(nn.Module):
@@ -41,10 +41,9 @@ class Orbitals(nn.Module):
     Q: float
     nspins: tuple[int, int]
     ndets: int
-
+    envelope_type: EnvelopeType
     def setup(self):
-        m = np.arange(0, int(self.Q + 1))
-        self.norm_factor = jnp.array(1.0 / np.sqrt(ss.factorial(m)))
+        
         if self.type == OrbitalType.full:
             self.featured_orbitals = FeaturedOrbitals(
                 nspins=self.nspins,
@@ -56,7 +55,8 @@ class Orbitals(nn.Module):
                 features=(8, sum(self.nspins), self.ndets),
             )
             self.lll_weight = nn.DenseGeneral(int(self.Q + 1), axis=1)
-
+            
+    @nn.compact
     def __call__(self, h_one, x, y):
         orbitals = self.featured_orbitals(h_one) # [nspins,Q+1,nspins]
         # Diagnostic: check normalization factors
@@ -71,17 +71,50 @@ class Orbitals(nn.Module):
         if self.type == OrbitalType.sparse:
             orbitals = self.lll_weight(orbitals).transpose((0, 3, 1, 2))
 
-        m = jnp.arange(0, int(self.Q + 1))
-        z = x + 1j * y
-        z = z[..., None]
-        r = jnp.sqrt(x**2 + y**2)
-        r = r[..., None]
-        envelope = self.norm_factor * z ** m * jnp.exp(- r**2 / 4)
+
+        r_square= x**2+y**2
+        r_square = r_square[..., None]
+        
+        # --- 修改部分开始 ---
+        # 1. 轨道总数为 Q + 1
+        num_orbitals = int(self.Q + 1)
+        # 2. 将 sigma 的 shape 指定为 (num_orbitals,) 而不是 (1,)
+        sigma = self.param("sigma", nn.initializers.constant(0.25), (num_orbitals,))
+        
+        if self.envelope_type == EnvelopeType.no_m_learnable:
+            # r_square shape 是 (batch, 1), sigma 是 (Q+1,)
+            # 相乘后自动发生广播（Broadcasting），envelope 的 shape 变为 (batch, Q+1)
+            envelope = jnp.exp(- r_square * jnp.abs(sigma))
+            
+        elif self.envelope_type == EnvelopeType.no_m_fixed:
+            envelope = jnp.exp(- r_square * 0.25)
+        
+        elif self.envelope_type == EnvelopeType.m_learnable:
+            m = np.arange(0, num_orbitals)
+            norm_factor = np.array(1.0 / np.sqrt(ss.factorial(m)))
+            z = x - 1j * y
+            z = z[..., None]
+            # 这里 z**m 同样会产生形状为 (batch, Q+1) 的数组
+            envelope = norm_factor * z ** m * jnp.exp(- r_square * sigma)
+            
+        elif self.envelope_type == EnvelopeType.m_fixed:
+            m = np.arange(0, num_orbitals)
+            norm_factor = np.array(1.0 / np.sqrt(ss.factorial(m)))
+            z = x - 1j * y
+            z = z[..., None]
+            envelope = norm_factor * z ** m * jnp.exp(- r_square * 0.25)
+        # --- 修改部分结束 ---
+
+        # 此时 envelope shape 为 (batch, Q+1)，
+        # envelope[..., None, None] 会在其末尾新增两个维度变为 (batch, Q+1, 1, 1)，
+        # 能完美地与 orbitals 进行乘法广播然后再基于 axis=1 求和。
+        orbitals = jnp.sum(orbitals * envelope[..., None, None], axis=1)
+        
+        
         '''
         jax.debug.print("print shapes in \'Orbitals\'")
         jax.debug.print("shape of original obitals:{shape}", shape = orbitals.shape)
         '''
-        orbitals = jnp.sum(orbitals * envelope[..., None, None], axis=1)
         '''
         jax.debug.print("shape of h_one:{shape}", shape = h_one.shape)
         jax.debug.print("shape of r:{shape}", shape=r.shape)
@@ -114,16 +147,22 @@ class Jastrow(nn.Module):
 
         if r_ees_parallel.shape[0] > 0:
             alpha_par = self.param("ee_par", nn.initializers.ones, (1,))
+            beta_par = self.param("beta_par", nn.initializers.constant(0.25), (1,))
+            a_p = jnp.squeeze(alpha_par)
+            b_p = jnp.squeeze(beta_par)
             jastrow_ee_par = jnp.sum(
-                -(0.25 * alpha_par**2) / (alpha_par + r_ees_parallel)
+                -(b_p * a_p**2) / (a_p + r_ees_parallel)
             )
         else:
             jastrow_ee_par = jnp.asarray(0.0)
 
         if r_ees[0][1].shape[0] > 0:
             alpha_anti = self.param("ee_anti", nn.initializers.ones, (1,))
+            beta_anti = self.param("beta_anti", nn.initializers.constant(0.5), (1,))
+            a_a = jnp.squeeze(alpha_anti)
+            b_a = jnp.squeeze(beta_anti)
             jastrow_ee_anti = jnp.sum(
-                -(0.5 * alpha_anti**2) / (alpha_anti + r_ees[0][1])
+                -(b_a * a_a**2) / (a_a + r_ees[0][1])
             )
         else:
             jastrow_ee_anti = jnp.asarray(0.0)

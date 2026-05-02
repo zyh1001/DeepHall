@@ -57,11 +57,12 @@ class Laughlin(nn.Module):
         return jnp.log(jnp.sum(signs * jnp.exp(logdets - logmax))) + logmax
 
     def orbitals(self, electrons):
-        theta, phi = electrons[..., 0], electrons[..., 1]
-        u = (jnp.cos(theta / 2) * jnp.exp(0.5j * phi))[..., None]
-        v = (jnp.sin(theta / 2) * jnp.exp(-0.5j * phi))[..., None]
+        x, y = electrons[..., 0], electrons[..., 1]
+        z = x + 1j*y
+        z = z[..., None]
+        r_squre = x**2 + y**2
 
-        return self.cf_orbitals(u, v)
+        return self.cf_orbitals(z, r_squre)
 
     def full_orbitals(self, u, v):
         Q = self.Q1

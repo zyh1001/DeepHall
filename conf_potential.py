@@ -114,7 +114,7 @@ def quad_array(N_spins, r_vals, a: float, d: float=0.1,
 def pre_compute(N_spins: int, Q: int, d: float=0.1, n_node: int=10000, 
                 limit: int=1000, epsrel: float=1e-4, use_quad = False):
     a = np.sqrt(2 * Q)
-    r_vals = np.linspace(0.0, 15*a, n_node)
+    r_vals = np.linspace(0.0, 16*a, n_node)
     
     current_file_directory = os.path.dirname(__file__)
     path_vc = os.path.join(current_file_directory,f"Vc_n{N_spins}_q{Q}.npy")
@@ -145,4 +145,4 @@ def pre_compute(N_spins: int, Q: int, d: float=0.1, n_node: int=10000,
         logging.error("Can\'t save data")
 if __name__ == "__main__":
     logging.info("Pre-computing confing potential")
-    pre_compute(6, 18, 0.1, use_quad = True)
+    pre_compute(9, 27, 0.1, use_quad = True)

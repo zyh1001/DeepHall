@@ -14,7 +14,7 @@
 
 from flax import linen as nn
 
-from deephall.config import Network, NetworkType, System
+from deephall.config import Network, NetworkType, System, EnvelopeType
 from deephall.networks.free import Free
 from deephall.networks.laughlin import Laughlin
 from deephall.networks.psiformer import Psiformer
@@ -37,4 +37,5 @@ def make_network(system: System, network: Network) -> nn.Module:
             num_layers=network.psiformer.num_layers,
             heads_dim=network.psiformer.heads_dim,
             orbital_type=network.orbital,
+            envelope_type=network.psiformer.envelope# 从 config.Network.psiformer 读取
         )
